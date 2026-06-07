@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Manuscrito — escreva seu livro</title>
+  <meta name="description" content="Bloco de notas privado para escrever um livro, capítulo por capítulo." />
+
+  <!-- Fontes: Newsreader (serifa, para o texto do livro) + Hanken Grotesk (interface) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&display=swap"
+    rel="stylesheet" />
+
+  <link rel="stylesheet" href="app.css" />
+
+  <!-- PWA: instalável e abre offline -->
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <meta name="theme-color" content="#9c4a2f" />
+  <link rel="apple-touch-icon" href="/icon-192.png" />
+</head>
+<body>
+
+  <!-- ============================ TELA: LOGIN ============================ -->
+  <section id="view-auth" class="view auth-view active">
+    <div class="auth-card">
+      <div class="brand">Manuscrito<span class="dot">.</span></div>
+      <p class="auth-sub">Seu caderno privado para escrever um livro, capítulo por capítulo.</p>
+
+      <!-- form com preventDefault no JS (Enter envia) -->
+      <form id="auth-form" autocomplete="on">
+        <div class="field">
+          <label for="auth-email">E-mail</label>
+          <input class="input" type="email" id="auth-email" placeholder="voce@email.com" required />
+        </div>
+        <div class="field">
+          <label for="auth-password">Senha</label>
+          <input class="input" type="password" id="auth-password" placeholder="••••••••" required minlength="6" />
+        </div>
+        <button type="submit" class="btn-primary" id="auth-submit">Entrar</button>
+        <div class="auth-msg" id="auth-msg"></div>
+      </form>
+
+      <div class="auth-toggle">
+        <span id="auth-toggle-text">Ainda não tem conta?</span>
+        <a id="auth-toggle-link">Criar conta</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================ TELA: BIBLIOTECA ============================ -->
+  <section id="view-library" class="view">
+    <header class="topbar">
+      <div class="brand-sm">Manuscrito<span class="dot">.</span></div>
+      <button class="btn-ghost" id="logout-btn">Sair</button>
+    </header>
+
+    <main class="library">
+      <div class="library-head">
+        <div>
+          <h1>Sua biblioteca</h1>
+          <p id="library-greeting"></p>
+        </div>
+        <button class="btn-primary" id="new-book-btn">Novo livro</button>
+      </div>
+
+      <div class="books-grid" id="books-grid"><!-- cartões injetados via JS --></div>
+
+      <div class="empty" id="books-empty" hidden>
+        <div class="empty-mark">❧</div>
+        <h2>Sua estante está vazia</h2>
+        <p>Crie seu primeiro livro e comece a escrever.</p>
+        <button class="btn-primary" id="empty-new-book-btn">Criar primeiro livro</button>
+      </div>
+    </main>
+  </section>
+
+  <!-- ============================ TELA: EDITOR ============================ -->
+  <section id="view-editor" class="view">
+    <!-- Sidebar: capítulos -->
+    <aside class="sidebar">
+      <button class="btn-ghost back-btn" id="back-btn">← Biblioteca</button>
+
+      <div class="book-head">
+        <h2 id="book-title">—</h2>
+        <button class="btn-icon" id="book-rename" title="Editar livro" aria-label="Editar livro"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19.5 3 20.5 4 16.5z"/></svg></button>
+      </div>
+
+      <div class="chapters-head">
+        <span>Capítulos</span>
+        <button class="btn-icon" id="new-chapter-btn" title="Novo capítulo" aria-label="Novo capítulo"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+      </div>
+
+      <ul class="chapters" id="chapters-list"><!-- capítulos injetados via JS --></ul>
+      <div class="sidebar-empty" id="chapters-empty" hidden>
+        Nenhum capítulo ainda. Clique em <strong>+</strong> para criar o primeiro.
+      </div>
+    </aside>
+
+    <!-- Área de escrita -->
+    <section class="editor">
+      <div class="editor-top" id="editor-top" hidden>
+        <div class="editor-top-inner">
+          <input type="text" class="chapter-title" id="chapter-title" placeholder="Título do capítulo" />
+          <div class="editor-actions">
+            <span class="save-status" id="save-status" data-state="saved">
+              <span class="dot"></span><span class="save-label">Salvo</span>
+            </span>
+            <button class="btn-primary" id="save-btn">Salvar</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="editor-body" id="editor-body" hidden>
+        <textarea class="editor-area" id="editor-area"
+          placeholder="Comece a escrever…" spellcheck="true"></textarea>
+      </div>
+
+      <div class="editor-placeholder" id="editor-placeholder">
+        <div class="empty-mark">✍</div>
+        <p>Selecione um capítulo à esquerda<br/>ou crie um novo para começar.</p>
+        <button class="btn-primary" id="placeholder-new-chapter-btn">Novo capítulo</button>
+      </div>
+    </section>
+  </section>
+
+  <!-- Containers de modal e toast -->
+  <div id="modal-root"></div>
+  <div id="toast"></div>
+  <!-- Pílula de status de conexão / sincronização -->
+  <div id="net-status" hidden></div>
+
+  <!-- Biblioteca oficial do Supabase (carrega antes do nosso app.js) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,1538 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Manuscrito — escreva seu livro</title>
+  <meta name="description" content="Bloco de notas privado para escrever um livro, capítulo por capítulo." />
+
+  <!-- Fontes: Newsreader (serifa, para o texto do livro) + Hanken Grotesk (interface) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&display=swap"
+    rel="stylesheet" />
+
+  <style>
+/* =========================================================
+   Manuscrito — estilos
+   Estética: "papel quente", minimalista, foco total na escrita.
+   - Títulos e editor em serifa (Newsreader) -> clima de livro
+   - Interface (botões, rótulos) em grotesca limpa (Hanken Grotesk)
+   - Desktop first, com um fallback simples para telas menores
+   ========================================================= */
+
+/* ---------- Tokens (mude aqui pra retematizar o app inteiro) ---------- */
+:root {
+  --paper:       #f6f2e9;   /* fundo geral, cor de papel */
+  --surface:     #fbf8f1;   /* cartões e painéis */
+  --surface-2:   #efe9db;   /* hover / preenchimentos sutis */
+  --ink:         #221f1a;   /* texto principal */
+  --ink-soft:    #5b5549;   /* texto secundário */
+  --ink-faint:   #938c7d;   /* placeholders / texto terciário */
+  --line:        #e4ded0;   /* bordas */
+  --line-strong: #d4ccb9;
+  --accent:      #9c4a2f;   /* terracota, usado com parcimônia */
+  --accent-ink:  #803a23;   /* hover do accent */
+  --accent-soft: #f0e2d8;   /* fundo tom-sobre-tom do accent */
+  --danger:      #a4392b;
+  --ok:          #46703f;   /* verde discreto do "Salvo" */
+
+  --radius:    11px;
+  --radius-sm: 7px;
+  --shadow-sm: 0 1px 2px rgba(40,33,20,.05), 0 2px 6px rgba(40,33,20,.05);
+  --shadow-md: 0 8px 30px rgba(40,33,20,.12);
+
+  --font-serif: "Newsreader", Georgia, "Times New Roman", serif;
+  --font-sans:  "Hanken Grotesk", system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  --measure: 64ch;   /* largura confortável de leitura no editor */
+}
+
+/* ---------- Reset enxuto ---------- */
+*, *::before, *::after { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  color: var(--ink);
+  background: var(--paper);
+  /* leve atmosfera: um brilho quente no topo, bem sutil */
+  background-image: radial-gradient(120% 80% at 50% -10%, #fbf7ee 0%, var(--paper) 55%);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+button { font-family: inherit; cursor: pointer; }
+input, textarea { font-family: inherit; }
+h1, h2, h3 { margin: 0; font-weight: 500; }
+
+/* ---------- Sistema de views (telas) ---------- */
+.view { display: none; min-height: 100%; }
+#view-auth.active    { display: flex; }
+#view-library.active { display: block; }
+#view-editor.active  { display: flex; }
+
+/* ---------- Botões ---------- */
+.btn-primary {
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: #fdf6ee;
+  padding: 10px 18px;
+  border-radius: var(--radius-sm);
+  font-size: .92rem;
+  font-weight: 600;
+  letter-spacing: .01em;
+  transition: background .15s ease, transform .05s ease, box-shadow .15s ease;
+}
+.btn-primary:hover  { background: var(--accent-ink); border-color: var(--accent-ink); }
+.btn-primary:active { transform: translateY(1px); }
+.btn-primary:disabled { opacity: .55; cursor: not-allowed; }
+
+.btn-ghost {
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--ink-soft);
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  font-size: .9rem;
+  font-weight: 500;
+  transition: background .15s ease, color .15s ease;
+}
+.btn-ghost:hover { background: var(--surface-2); color: var(--ink); }
+
+.btn-icon {
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--ink-faint);
+  width: 30px; height: 30px;
+  border-radius: var(--radius-sm);
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 1rem; line-height: 1;
+  transition: background .15s ease, color .15s ease;
+}
+.btn-icon:hover { background: var(--surface-2); color: var(--ink); }
+.btn-icon.danger:hover { background: #f6e3df; color: var(--danger); }
+/* ícones SVG: mesmo tamanho exato, monocromáticos, herdam a cor do botão */
+.btn-icon svg {
+  width: 16px; height: 16px; display: block;
+  fill: none; stroke: currentColor;
+  stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round;
+}
+
+/* ---------- Campos ---------- */
+.field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+.field label { font-size: .82rem; font-weight: 600; color: var(--ink-soft); }
+.input {
+  width: 100%;
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--ink);
+  padding: 11px 13px;
+  border-radius: var(--radius-sm);
+  font-size: .95rem;
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+.input::placeholder { color: var(--ink-faint); }
+.input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+textarea.input { resize: vertical; min-height: 84px; line-height: 1.5; }
+
+/* =========================================================
+   TELA DE LOGIN
+   ========================================================= */
+.auth-view { align-items: center; justify-content: center; padding: 24px; }
+.auth-card {
+  width: 100%;
+  max-width: 380px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-md);
+  padding: 40px 34px 34px;
+}
+.brand {
+  font-family: var(--font-serif);
+  font-size: 2rem;
+  font-weight: 500;
+  letter-spacing: -.01em;
+  color: var(--ink);
+}
+.brand .dot { color: var(--accent); }
+.auth-sub {
+  margin: 6px 0 26px;
+  color: var(--ink-soft);
+  font-size: .95rem;
+  line-height: 1.45;
+}
+.auth-card .btn-primary { width: 100%; margin-top: 4px; }
+.auth-msg {
+  min-height: 18px;
+  margin: 12px 2px 0;
+  font-size: .85rem;
+  line-height: 1.4;
+}
+.auth-msg.error { color: var(--danger); }
+.auth-msg.info  { color: var(--ok); }
+.auth-toggle {
+  margin-top: 20px;
+  text-align: center;
+  font-size: .88rem;
+  color: var(--ink-soft);
+}
+.auth-toggle a { color: var(--accent); font-weight: 600; cursor: pointer; text-decoration: none; }
+.auth-toggle a:hover { text-decoration: underline; }
+
+/* =========================================================
+   TOPO (biblioteca)
+   ========================================================= */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 26px;
+  border-bottom: 1px solid var(--line);
+  background: rgba(251,248,241,.7);
+  backdrop-filter: blur(6px);
+  position: sticky; top: 0; z-index: 10;
+}
+.brand-sm {
+  font-family: var(--font-serif);
+  font-size: 1.3rem;
+  font-weight: 500;
+  color: var(--ink);
+}
+.brand-sm .dot { color: var(--accent); }
+
+/* =========================================================
+   BIBLIOTECA
+   ========================================================= */
+.library {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 40px 26px 80px;
+}
+.library-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: 28px;
+  gap: 16px;
+}
+.library-head h1 {
+  font-family: var(--font-serif);
+  font-size: 2rem;
+  font-weight: 500;
+  letter-spacing: -.01em;
+}
+.library-head p { margin: 4px 0 0; color: var(--ink-soft); font-size: .92rem; }
+
+.books-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(248px, 1fr));
+  gap: 18px;
+}
+.book-card {
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 22px 20px 18px;
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  transition: transform .12s ease, box-shadow .15s ease, border-color .15s ease;
+  min-height: 150px;
+  display: flex;
+  flex-direction: column;
+}
+.book-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--line-strong);
+}
+.book-card .spine {
+  position: absolute; left: 0; top: 14px; bottom: 14px;
+  width: 3px; border-radius: 3px; background: var(--accent);
+  opacity: .8;
+}
+.book-card h3 {
+  font-family: var(--font-serif);
+  font-size: 1.32rem;
+  font-weight: 500;
+  line-height: 1.25;
+  color: var(--ink);
+  margin-bottom: 6px;
+  padding-left: 6px;
+}
+.book-card .desc {
+  flex: 1;
+  padding-left: 6px;
+  font-size: .9rem;
+  color: var(--ink-soft);
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.book-card .desc.empty { color: var(--ink-faint); font-style: italic; }
+.book-card .meta {
+  padding-left: 6px;
+  margin-top: 14px;
+  font-size: .76rem;
+  color: var(--ink-faint);
+  letter-spacing: .01em;
+}
+.book-card .card-actions {
+  position: absolute; top: 12px; right: 10px;
+  display: flex; gap: 2px;
+  opacity: 0; pointer-events: none; transition: opacity .15s ease;
+}
+.book-card:hover .card-actions,
+.book-card:focus-within .card-actions { opacity: 1; pointer-events: auto; }
+
+/* estados vazios */
+.empty {
+  text-align: center;
+  padding: 70px 20px;
+  color: var(--ink-soft);
+}
+.empty .empty-mark { font-family: var(--font-serif); font-size: 2.4rem; color: var(--line-strong); }
+.empty h2 { font-family: var(--font-serif); font-weight: 500; font-size: 1.4rem; margin: 10px 0 6px; }
+.empty p { margin: 0 0 20px; font-size: .95rem; }
+
+/* =========================================================
+   EDITOR (sidebar de capítulos + área de escrita)
+   ========================================================= */
+.sidebar {
+  width: 268px;
+  flex-shrink: 0;
+  border-right: 1px solid var(--line);
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  position: sticky; top: 0;
+  padding: 16px 14px;
+  overflow-y: auto;
+}
+.sidebar .back-btn { align-self: flex-start; margin-bottom: 14px; }
+.book-head {
+  display: flex; align-items: flex-start; gap: 4px;
+  padding: 0 6px 14px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 12px;
+}
+#book-title {
+  font-family: var(--font-serif);
+  font-size: 1.3rem;
+  font-weight: 500;
+  line-height: 1.25;
+  color: var(--ink);
+  flex: 1;
+  word-break: break-word;
+}
+.book-head .btn-icon { flex-shrink: 0; }
+
+.chapters-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 2px 6px 8px;
+}
+.chapters-head span {
+  font-size: .74rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.chapters { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.chapter-item {
+  display: flex; align-items: center; gap: 4px;
+  padding: 9px 8px 9px 10px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  color: var(--ink-soft);
+  transition: background .12s ease, color .12s ease;
+}
+.chapter-item:hover { background: var(--surface-2); color: var(--ink); }
+.chapter-item.active { background: var(--accent-soft); color: var(--accent-ink); }
+.chapter-item .ch-title {
+  flex: 1;
+  font-size: .92rem;
+  font-weight: 500;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.chapter-item .ch-actions { display: flex; gap: 0; opacity: 0; pointer-events: none; transition: opacity .12s ease; }
+.chapter-item:hover .ch-actions, .chapter-item.active .ch-actions { opacity: 1; pointer-events: auto; }
+.chapter-item .btn-icon { width: 26px; height: 26px; }
+.chapter-item .btn-icon svg { width: 15px; height: 15px; }
+
+.sidebar-empty { padding: 16px 8px; color: var(--ink-faint); font-size: .86rem; line-height: 1.5; }
+
+/* área de escrita */
+.editor {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  height: 100vh;
+}
+.editor-top {
+  border-bottom: 1px solid var(--line);
+}
+/* conteúdo do topo alinhado à mesma coluna do texto (título sobre o corpo) */
+.editor-top-inner {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  max-width: var(--measure);
+  margin: 0 auto;
+  padding: 16px 24px;
+}
+.chapter-title {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--font-serif);
+  font-size: 1.5rem;
+  font-weight: 500;
+  padding: 4px 0;
+  min-width: 0;
+}
+.chapter-title::placeholder { color: var(--ink-faint); }
+.chapter-title:focus { outline: none; }
+.editor-actions { display: flex; align-items: center; gap: 16px; flex-shrink: 0; }
+
+/* indicador de salvamento */
+.save-status {
+  display: inline-flex; align-items: center; gap: 7px;
+  font-size: .82rem; color: var(--ink-faint);
+  white-space: nowrap;
+}
+.save-status .dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--ink-faint);
+  flex-shrink: 0;
+}
+.save-status[data-state="saved"]   { color: var(--ok); }
+.save-status[data-state="saved"] .dot   { background: var(--ok); }
+.save-status[data-state="dirty"]   { color: var(--ink-soft); }
+.save-status[data-state="dirty"] .dot   { background: var(--accent); }
+.save-status[data-state="saving"]  { color: var(--accent-ink); }
+.save-status[data-state="saving"] .dot  { background: var(--accent); animation: pulse 1s ease-in-out infinite; }
+.save-status[data-state="error"]   { color: var(--danger); }
+.save-status[data-state="error"] .dot   { background: var(--danger); }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .3; } }
+
+.editor-body { flex: 1; overflow-y: auto; display: flex; justify-content: center; scrollbar-gutter: stable both-edges; }
+.editor-area {
+  width: 100%;
+  max-width: var(--measure);
+  border: none;
+  background: transparent;
+  resize: none;
+  outline: none;
+  color: var(--ink);
+  font-family: var(--font-serif);
+  font-size: 1.18rem;
+  line-height: 1.85;
+  padding: 44px 24px 160px;
+}
+.editor-area::placeholder { color: var(--ink-faint); }
+
+.editor-placeholder {
+  flex: 1;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  text-align: center; padding: 40px;
+  color: var(--ink-soft);
+}
+.editor-placeholder .empty-mark { font-family: var(--font-serif); font-size: 2.6rem; color: var(--line-strong); }
+.editor-placeholder p { margin: 12px 0 18px; font-size: .98rem; }
+
+/* barra de scroll discreta */
+.sidebar::-webkit-scrollbar, .editor-body::-webkit-scrollbar { width: 10px; }
+.sidebar::-webkit-scrollbar-thumb, .editor-body::-webkit-scrollbar-thumb {
+  background: var(--line-strong); border-radius: 10px; border: 3px solid var(--surface);
+}
+.editor-body::-webkit-scrollbar-thumb { border-color: var(--paper); }
+
+/* =========================================================
+   MODAL (criar/editar) e CONFIRMAÇÃO
+   ========================================================= */
+.modal-backdrop {
+  position: fixed; inset: 0; z-index: 100;
+  background: rgba(34,31,26,.34);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+  animation: fade .12s ease;
+}
+@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+.modal {
+  width: 100%; max-width: 420px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-md);
+  padding: 26px 24px 22px;
+  animation: rise .14s ease;
+}
+@keyframes rise { from { transform: translateY(8px); opacity: .6; } to { transform: translateY(0); opacity: 1; } }
+.modal h3 {
+  font-family: var(--font-serif);
+  font-size: 1.35rem; font-weight: 500;
+  margin-bottom: 18px;
+}
+.modal .modal-msg { color: var(--ink-soft); font-size: .95rem; line-height: 1.5; margin-bottom: 22px; }
+.modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px; }
+.btn-danger {
+  border: 1px solid var(--danger); background: var(--danger); color: #fdf3f1;
+  padding: 10px 18px; border-radius: var(--radius-sm); font-size: .92rem; font-weight: 600;
+  transition: background .15s ease;
+}
+.btn-danger:hover { background: #8e3023; }
+
+/* =========================================================
+   TOAST (avisos rápidos, ex: erro de salvamento)
+   ========================================================= */
+#toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px);
+  z-index: 200;
+  background: var(--ink); color: #f6f2e9;
+  padding: 12px 18px; border-radius: var(--radius-sm);
+  font-size: .9rem; box-shadow: var(--shadow-md);
+  opacity: 0; pointer-events: none;
+  transition: opacity .2s ease, transform .2s ease;
+  max-width: 90vw;
+}
+#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+#toast.error { background: #7a2a20; }
+
+/* pílula de status de conexão / sincronização (canto inferior esquerdo) */
+#net-status {
+  position: fixed; bottom: 18px; left: 18px; z-index: 150;
+  padding: 7px 13px; border-radius: 999px;
+  font-size: .82rem; font-weight: 500;
+  box-shadow: var(--shadow-md);
+  display: inline-flex; align-items: center; gap: 8px;
+  max-width: calc(100vw - 36px);
+}
+#net-status::before {
+  content: ""; width: 8px; height: 8px; border-radius: 50%; flex: none;
+}
+#net-status[data-kind="offline"] { background: #f3e3c8; color: #6b4d12; border: 1px solid #e3cfa3; }
+#net-status[data-kind="offline"]::before { background: #c98a13; }
+#net-status[data-kind="syncing"] { background: #e7ede6; color: #2f5132; border: 1px solid #cfe0cf; }
+#net-status[data-kind="syncing"]::before { background: #3f8a45; animation: ms-pulse 1s ease-in-out infinite; }
+@keyframes ms-pulse { 0%,100% { opacity: 1; } 50% { opacity: .3; } }
+@media (max-width: 760px) { #net-status { bottom: 12px; left: 12px; } }
+
+/* banner do modo demonstração (usado só no preview) */
+.demo-banner {
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  text-align: center;
+  font-size: .82rem;
+  font-weight: 600;
+  padding: 7px 16px;
+  border-bottom: 1px solid var(--line-strong);
+}
+
+/* =========================================================
+   RESPONSIVO (desktop-first, com fallback simples)
+   ========================================================= */
+@media (max-width: 760px) {
+  #view-editor.active { flex-direction: column; }
+  .sidebar {
+    width: 100%; height: auto; position: static;
+    border-right: none; border-bottom: 1px solid var(--line);
+    max-height: 42vh;
+  }
+  .editor { height: auto; }
+  .editor-body { min-height: 58vh; scrollbar-gutter: auto; }
+  .editor-top-inner { padding: 12px 18px; max-width: 100%; }
+  .editor-area { padding: 28px 18px 120px; font-size: 1.1rem; }
+  .library { padding: 28px 18px 60px; }
+}
+
+  </style>
+
+  <!-- PWA: instalável e abre offline -->
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <meta name="theme-color" content="#9c4a2f" />
+  <link rel="apple-touch-icon" href="/icon-192.png" />
+</head>
+<body>
+  <div class="demo-banner">Modo demonstração — dados ficam só nesta tela (somem ao recarregar). Entre com qualquer e-mail e senha.</div>
+
+  <!-- ============================ TELA: LOGIN ============================ -->
+  <section id="view-auth" class="view auth-view active">
+    <div class="auth-card">
+      <div class="brand">Manuscrito<span class="dot">.</span></div>
+      <p class="auth-sub">Seu caderno privado para escrever um livro, capítulo por capítulo.</p>
+
+      <!-- form com preventDefault no JS (Enter envia) -->
+      <form id="auth-form" autocomplete="on">
+        <div class="field">
+          <label for="auth-email">E-mail</label>
+          <input class="input" type="email" id="auth-email" placeholder="voce@email.com" required />
+        </div>
+        <div class="field">
+          <label for="auth-password">Senha</label>
+          <input class="input" type="password" id="auth-password" placeholder="••••••••" required minlength="6" />
+        </div>
+        <button type="submit" class="btn-primary" id="auth-submit">Entrar</button>
+        <div class="auth-msg" id="auth-msg"></div>
+      </form>
+
+      <div class="auth-toggle">
+        <span id="auth-toggle-text">Ainda não tem conta?</span>
+        <a id="auth-toggle-link">Criar conta</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================ TELA: BIBLIOTECA ============================ -->
+  <section id="view-library" class="view">
+    <header class="topbar">
+      <div class="brand-sm">Manuscrito<span class="dot">.</span></div>
+      <button class="btn-ghost" id="logout-btn">Sair</button>
+    </header>
+
+    <main class="library">
+      <div class="library-head">
+        <div>
+          <h1>Sua biblioteca</h1>
+          <p id="library-greeting"></p>
+        </div>
+        <button class="btn-primary" id="new-book-btn">Novo livro</button>
+      </div>
+
+      <div class="books-grid" id="books-grid"><!-- cartões injetados via JS --></div>
+
+      <div class="empty" id="books-empty" hidden>
+        <div class="empty-mark">❧</div>
+        <h2>Sua estante está vazia</h2>
+        <p>Crie seu primeiro livro e comece a escrever.</p>
+        <button class="btn-primary" id="empty-new-book-btn">Criar primeiro livro</button>
+      </div>
+    </main>
+  </section>
+
+  <!-- ============================ TELA: EDITOR ============================ -->
+  <section id="view-editor" class="view">
+    <!-- Sidebar: capítulos -->
+    <aside class="sidebar">
+      <button class="btn-ghost back-btn" id="back-btn">← Biblioteca</button>
+
+      <div class="book-head">
+        <h2 id="book-title">—</h2>
+        <button class="btn-icon" id="book-rename" title="Editar livro" aria-label="Editar livro"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19.5 3 20.5 4 16.5z"/></svg></button>
+      </div>
+
+      <div class="chapters-head">
+        <span>Capítulos</span>
+        <button class="btn-icon" id="new-chapter-btn" title="Novo capítulo" aria-label="Novo capítulo"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+      </div>
+
+      <ul class="chapters" id="chapters-list"><!-- capítulos injetados via JS --></ul>
+      <div class="sidebar-empty" id="chapters-empty" hidden>
+        Nenhum capítulo ainda. Clique em <strong>+</strong> para criar o primeiro.
+      </div>
+    </aside>
+
+    <!-- Área de escrita -->
+    <section class="editor">
+      <div class="editor-top" id="editor-top" hidden>
+        <div class="editor-top-inner">
+          <input type="text" class="chapter-title" id="chapter-title" placeholder="Título do capítulo" />
+          <div class="editor-actions">
+            <span class="save-status" id="save-status" data-state="saved">
+              <span class="dot"></span><span class="save-label">Salvo</span>
+            </span>
+            <button class="btn-primary" id="save-btn">Salvar</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="editor-body" id="editor-body" hidden>
+        <textarea class="editor-area" id="editor-area"
+          placeholder="Comece a escrever…" spellcheck="true"></textarea>
+      </div>
+
+      <div class="editor-placeholder" id="editor-placeholder">
+        <div class="empty-mark">✍</div>
+        <p>Selecione um capítulo à esquerda<br/>ou crie um novo para começar.</p>
+        <button class="btn-primary" id="placeholder-new-chapter-btn">Novo capítulo</button>
+      </div>
+    </section>
+  </section>
+
+  <!-- Containers de modal e toast -->
+  <div id="modal-root"></div>
+  <div id="toast"></div>
+  <!-- Pílula de status de conexão / sincronização -->
+  <div id="net-status" hidden></div>
+
+  <!-- Biblioteca oficial do Supabase (carrega antes do nosso app.js) -->
+  <script>
+/* ===================== 2. ESTADO ===================== */
+/* ÍCONES — SVG em vez de emoji: editar e excluir ficam exatamente do mesmo
+   tamanho, herdam a cor do botão e respondem ao hover (inclusive o vermelho). */
+const ICON = {
+  edit:  '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19.5 3 20.5 4 16.5z"/></svg>',
+  trash: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>',
+  plus:  '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>',
+};
+
+const state = {
+  user: null,
+  books: [],
+  currentBook: null,
+  chapters: [],
+  currentChapter: null,
+  dirty: false,        // existe alteração não salva?
+  saving: false,       // está salvando agora?
+  resaveQueued: false, // digitou DURANTE um save? salva de novo ao terminar
+  autosaveTimer: null, // timer do autosave (debounce)
+  retryTimer: null,    // timer da retentativa após erro
+  retryDelay: 0,       // backoff atual da retentativa (ms)
+  savedAt: null,       // quando salvou pela última vez (timestamp)
+  online: typeof navigator !== "undefined" ? navigator.onLine : true, // tem conexão?
+  syncing: false,      // está drenando a fila pro servidor agora?
+  authMode: "login",   // "login" ou "signup"
+};
+const AUTOSAVE_MS = 1500;  // salva 1,5s depois que você para de digitar
+const RETRY_MIN_MS = 3000; // 1ª retentativa após erro
+const RETRY_MAX_MS = 30000;// teto do backoff
+
+/* ===================== 3. CAMADA DB (MOCK — modo demonstração) =====================
+   Mesma interface da versão real, mas guarda tudo em memória (sem Supabase).
+   Some ao recarregar a página. Serve só para você ver o visual e o fluxo. */
+let SEQ = 1;
+const uid = () => "id-" + (SEQ++);
+const store = { user: null, books: [], chapters: [] };
+let authCb = null;
+function emitAuth() {
+  if (authCb) authCb(store.user ? "SIGNED_IN" : "SIGNED_OUT", store.user ? { user: store.user } : null);
+}
+function touchBook(bookId) {
+  const b = store.books.find((x) => x.id === bookId);
+  if (b) b.updated_at = new Date().toISOString();
+}
+const db = {
+  async getSession() { return store.user ? { user: store.user } : null; },
+  async signIn(email) { store.user = { email }; emitAuth(); return { data: { user: store.user }, error: null }; },
+  async signUp(email) { store.user = { email }; emitAuth(); return { data: { session: {}, user: store.user }, error: null }; },
+  async signOut() { store.user = null; emitAuth(); return { error: null }; },
+  onAuthChange(cb) { authCb = cb; return { data: { subscription: { unsubscribe() {} } } }; },
+  async syncNow() { return; },
+  async listBooks() {
+    const data = [...store.books].sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
+    return { data, error: null };
+  },
+  async createBook(title, description) {
+    const now = new Date().toISOString();
+    const b = { id: uid(), title, description, created_at: now, updated_at: now };
+    store.books.push(b); return { data: b, error: null };
+  },
+  async updateBook(id, fields) {
+    const b = store.books.find((x) => x.id === id);
+    Object.assign(b, fields, { updated_at: new Date().toISOString() });
+    return { data: b, error: null };
+  },
+  async deleteBook(id) {
+    store.books = store.books.filter((b) => b.id !== id);
+    store.chapters = store.chapters.filter((c) => c.book_id !== id);
+    return { error: null };
+  },
+  async listChapters(bookId) {
+    const data = store.chapters.filter((c) => c.book_id === bookId).sort((a, b) => a.order_index - b.order_index);
+    return { data, error: null };
+  },
+  async createChapter(bookId, title, orderIndex) {
+    const now = new Date().toISOString();
+    const c = { id: uid(), book_id: bookId, title, content: "", order_index: orderIndex, created_at: now, updated_at: now };
+    store.chapters.push(c); touchBook(bookId); return { data: c, error: null };
+  },
+  async updateChapter(id, fields) {
+    const c = store.chapters.find((x) => x.id === id);
+    Object.assign(c, fields, { updated_at: new Date().toISOString() });
+    touchBook(c.book_id);
+    await new Promise((r) => setTimeout(r, 350)); // simula latência pra você ver "Salvando…"
+    return { data: c, error: null };
+  },
+  async deleteChapter(id) {
+    const c = store.chapters.find((x) => x.id === id);
+    const bid = c && c.book_id;
+    store.chapters = store.chapters.filter((x) => x.id !== id);
+    if (bid) touchBook(bid);
+    return { error: null };
+  },
+};
+// dados de exemplo (some ao recarregar)
+(function seed() {
+  const now = new Date().toISOString();
+  const b = { id: uid(), title: "O Caminho Suave", description: "Memórias e princípios aprendidos no tatame.", created_at: now, updated_at: now };
+  store.books.push(b);
+  store.chapters.push({ id: uid(), book_id: b.id, title: "Capítulo 1 — A primeira aula",
+    content: "Eu não sabia o que esperar quando pisei pela primeira vez no tatame.\n\nO cheiro do kimono novo, o som seco das quedas, a respiração ofegante dos mais velhos. E aquela sensação estranha de não saber absolutamente nada.", order_index: 0, created_at: now, updated_at: now });
+  store.chapters.push({ id: uid(), book_id: b.id, title: "Capítulo 2 — A base",
+    content: "Antes de qualquer finalização, vem a base. Sem base, não há jogo.", order_index: 1, created_at: now, updated_at: now });
+})();
+
+/* ===================== 4. UTILITÁRIOS ===================== */
+const $ = (sel) => document.querySelector(sel);
+
+/* ---------- offline-first: espelho local + fila + sincronização ----------
+   Fica aqui (e não na seção 3) de propósito: a seção 3 é trocada por um mock
+   no preview, mas estas funções precisam continuar existindo. */
+const HAS_LS = (() => {
+  try { const k = "__ms_test__"; localStorage.setItem(k, "1"); localStorage.removeItem(k); return true; }
+  catch (_) { return false; }
+})();
+function lsGet(key, fallback) {
+  if (!HAS_LS) return fallback;
+  try { const r = localStorage.getItem(key); return r ? JSON.parse(r) : fallback; } catch (_) { return fallback; }
+}
+function lsSet(key, val) { if (!HAS_LS) return; try { localStorage.setItem(key, JSON.stringify(val)); } catch (_) {} }
+function lsDel(key) { if (!HAS_LS) return; try { localStorage.removeItem(key); } catch (_) {} }
+
+function currentUid() { return (state.user && state.user.id) || "anon"; }
+function nsKey(suffix) { return "manuscrito:" + currentUid() + ":" + suffix; }
+
+function localBooks() { return lsGet(nsKey("books"), []); }
+function setLocalBooks(arr) { lsSet(nsKey("books"), arr); }
+function localChapters() { return lsGet(nsKey("chapters"), []); }
+function setLocalChapters(arr) { lsSet(nsKey("chapters"), arr); }
+function queueGet() { return lsGet(nsKey("queue"), []); }
+function queueSet(arr) { lsSet(nsKey("queue"), arr); }
+
+function touchLocalBook(bookId) {
+  const books = localBooks();
+  const i = books.findIndex((b) => b.id === bookId);
+  if (i >= 0) { books[i] = { ...books[i], updated_at: new Date().toISOString() }; setLocalBooks(books); }
+}
+
+function newId() {
+  if (typeof crypto !== "undefined" && crypto.randomUUID) return crypto.randomUUID();
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0; return (c === "x" ? r : (r & 0x3) | 0x8).toString(16);
+  });
+}
+
+/* Enfileira uma operação, COALESCENDO pra fila ficar mínima:
+   - delete cancela ops pendentes do mesmo id (e nem precisa ir ao servidor se a linha nunca subiu)
+   - update funde com um insert pendente, ou com o último update pendente do mesmo id */
+function enqueue(op) {
+  let q = queueGet();
+  if (op.op === "delete") {
+    const hadPendingInsert = q.some((o) => o.id === op.id && o.op === "insert");
+    q = q.filter((o) => o.id !== op.id);
+    if (!hadPendingInsert) q.push(op);
+    queueSet(q); updateSyncIndicator(); return;
+  }
+  if (op.op === "update") {
+    const ins = q.find((o) => o.id === op.id && o.op === "insert");
+    if (ins) { ins.payload = { ...ins.payload, ...op.payload }; queueSet(q); updateSyncIndicator(); return; }
+    const last = [...q].reverse().find((o) => o.id === op.id);
+    if (last && last.op === "update") { last.payload = { ...last.payload, ...op.payload }; queueSet(q); updateSyncIndicator(); return; }
+  }
+  q.push(op); queueSet(q); updateSyncIndicator();
+}
+
+// aplica UMA operação no Supabase (upsert no insert = replay idempotente)
+function applyOp(op) {
+  const t = supabaseClient.from(op.table);
+  if (op.op === "insert") return t.upsert(op.payload);
+  if (op.op === "update") return t.update(op.payload).eq("id", op.id);
+  if (op.op === "delete") return t.delete().eq("id", op.id);
+}
+
+// drena a fila pro servidor, em ordem. Para no 1º erro e tenta depois.
+let _flushing = false;
+async function flushQueue() {
+  if (typeof supabaseClient === "undefined" || !supabaseClient) return; // preview / não configurado
+  if (!state.online || _flushing) return;
+  if (!queueGet().length) { updateSyncIndicator(); return; }
+
+  _flushing = true; state.syncing = true; updateSyncIndicator();
+  try {
+    await supabaseClient.auth.getSession(); // cutuca o refresh do token, se preciso
+    let q = queueGet();
+    while (q.length) {
+      const op = q[0];
+      let res;
+      try { res = await applyOp(op); } catch (e) { res = { error: e }; }
+      if (res && res.error) break; // rede caiu (ou erro) → para e tenta na próxima
+      q = q.slice(1); queueSet(q);
+    }
+  } finally {
+    _flushing = false; state.syncing = false;
+    updateSyncIndicator();
+  }
+  if (state.online && !queueGet().length) { try { await refreshSnapshot(); } catch (_) {} }
+}
+
+// recarrega TODO o espelho local a partir do servidor (livros + todos os capítulos do usuário)
+async function refreshSnapshot() {
+  if (typeof supabaseClient === "undefined" || !supabaseClient || !state.online) return;
+  try {
+    const { data: books } = await remote.listBooks();
+    if (books) setLocalBooks(books);
+    const { data: chapters } = await remote.listAllChapters();
+    if (chapters) setLocalChapters(chapters);
+  } catch (_) {}
+}
+
+// pílula de status de conexão/sincronização (canto da tela)
+function updateSyncIndicator() {
+  const el = $("#net-status");
+  if (!el) return;
+  const pending = queueGet().length;
+  if (!state.online) {
+    el.hidden = false; el.dataset.kind = "offline";
+    el.textContent = pending
+      ? "Offline · " + pending + " alteração(ões) aguardando sincronizar"
+      : "Offline · suas alterações ficam salvas neste aparelho";
+  } else if (state.syncing) {
+    el.hidden = false; el.dataset.kind = "syncing";
+    el.textContent = "Sincronizando…";
+  } else {
+    el.hidden = true; el.dataset.kind = "";
+  }
+}
+
+// liga os ouvintes de conexão (chamado em wireEvents)
+function initOffline() {
+  state.online = (typeof navigator !== "undefined") ? navigator.onLine : true;
+  window.addEventListener("online", () => { state.online = true; updateSyncIndicator(); flushQueue(); });
+  window.addEventListener("offline", () => { state.online = false; updateSyncIndicator(); });
+  // rede de segurança: tenta drenar a fila de tempos em tempos
+  setInterval(() => { if (state.online && queueGet().length) flushQueue(); }, 20000);
+  updateSyncIndicator();
+}
+
+// data amigável: "hoje", "ontem" ou "12 mar 2025"
+function formatDate(iso) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  const now = new Date();
+  const dia = 86400000;
+  const diff = Math.floor((now.setHours(0,0,0,0) - new Date(iso).setHours(0,0,0,0)) / dia);
+  if (diff === 0) return "hoje";
+  if (diff === 1) return "ontem";
+  return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" });
+}
+
+let toastTimer = null;
+function toast(message, isError = false) {
+  const t = $("#toast");
+  t.textContent = message;
+  t.classList.toggle("error", isError);
+  t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove("show"), 3200);
+}
+
+/* Modal de formulário (criar/editar). Campos = [{name,label,value,placeholder,textarea}] */
+function openFormModal({ title, fields, confirmText = "Salvar", onConfirm }) {
+  const root = $("#modal-root");
+  const fieldsHtml = fields.map((f) => {
+    const id = "mf-" + f.name;
+    const input = f.textarea
+      ? `<textarea class="input" id="${id}" placeholder="${escapeAttr(f.placeholder || "")}">${escapeHtml(f.value || "")}</textarea>`
+      : `<input class="input" id="${id}" type="text" value="${escapeAttr(f.value || "")}" placeholder="${escapeAttr(f.placeholder || "")}" />`;
+    return `<div class="field"><label for="${id}">${escapeHtml(f.label)}</label>${input}</div>`;
+  }).join("");
+
+  root.innerHTML = `
+    <div class="modal-backdrop">
+      <div class="modal" role="dialog" aria-modal="true">
+        <h3>${escapeHtml(title)}</h3>
+        <form id="modal-form">
+          ${fieldsHtml}
+          <div class="modal-actions">
+            <button type="button" class="btn-ghost" id="modal-cancel">Cancelar</button>
+            <button type="submit" class="btn-primary">${escapeHtml(confirmText)}</button>
+          </div>
+        </form>
+      </div>
+    </div>`;
+
+  const close = () => { root.innerHTML = ""; };
+  const first = root.querySelector(".input");
+  if (first) { first.focus(); if (first.select) first.select(); }
+
+  root.querySelector("#modal-cancel").onclick = close;
+  root.querySelector(".modal-backdrop").onclick = (e) => { if (e.target.classList.contains("modal-backdrop")) close(); };
+  document.addEventListener("keydown", function esc(e) {
+    if (e.key === "Escape") { close(); document.removeEventListener("keydown", esc); }
+  });
+  root.querySelector("#modal-form").onsubmit = (e) => {
+    e.preventDefault();
+    const values = {};
+    fields.forEach((f) => { values[f.name] = root.querySelector("#mf-" + f.name).value.trim(); });
+    close();
+    onConfirm(values);
+  };
+}
+
+/* Modal de confirmação (excluir) */
+function openConfirm({ title, message, confirmText = "Excluir", onConfirm }) {
+  const root = $("#modal-root");
+  root.innerHTML = `
+    <div class="modal-backdrop">
+      <div class="modal" role="dialog" aria-modal="true">
+        <h3>${escapeHtml(title)}</h3>
+        <p class="modal-msg">${escapeHtml(message)}</p>
+        <div class="modal-actions">
+          <button type="button" class="btn-ghost" id="modal-cancel">Cancelar</button>
+          <button type="button" class="btn-danger" id="modal-confirm">${escapeHtml(confirmText)}</button>
+        </div>
+      </div>
+    </div>`;
+  const close = () => { root.innerHTML = ""; };
+  root.querySelector("#modal-cancel").onclick = close;
+  root.querySelector(".modal-backdrop").onclick = (e) => { if (e.target.classList.contains("modal-backdrop")) close(); };
+  root.querySelector("#modal-confirm").onclick = () => { close(); onConfirm(); };
+}
+
+function escapeHtml(str) {
+  return String(str).replace(/[&<>"']/g, (c) =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+function escapeAttr(str) { return escapeHtml(str); }
+
+/* ===================== 5. ROTEAMENTO ===================== */
+function showView(name) {
+  document.querySelectorAll(".view").forEach((v) => v.classList.remove("active"));
+  $("#view-" + name).classList.add("active");
+}
+
+/* ===================== 6. LOGIN ===================== */
+function setAuthMessage(text, type) {
+  const el = $("#auth-msg");
+  el.textContent = text || "";
+  el.className = "auth-msg" + (type ? " " + type : "");
+}
+
+function toggleAuthMode() {
+  state.authMode = state.authMode === "login" ? "signup" : "login";
+  const isLogin = state.authMode === "login";
+  $("#auth-submit").textContent = isLogin ? "Entrar" : "Criar conta";
+  $("#auth-toggle-text").textContent = isLogin ? "Ainda não tem conta?" : "Já tem conta?";
+  $("#auth-toggle-link").textContent = isLogin ? "Criar conta" : "Entrar";
+  setAuthMessage("");
+}
+
+async function handleAuthSubmit(e) {
+  e.preventDefault();
+  const email = $("#auth-email").value.trim();
+  const password = $("#auth-password").value;
+  if (!email || !password) return;
+
+  const btn = $("#auth-submit");
+  btn.disabled = true;
+  setAuthMessage(state.authMode === "login" ? "Entrando…" : "Criando conta…", "info");
+
+  try {
+    if (state.authMode === "login") {
+      const { error } = await db.signIn(email, password);
+      if (error) throw error;
+      // o onAuthStateChange cuida de abrir a biblioteca
+    } else {
+      const { data, error } = await db.signUp(email, password);
+      if (error) throw error;
+      if (data.session) {
+        setAuthMessage("Conta criada! Entrando…", "info");
+      } else {
+        // confirmação de e-mail provavelmente está ativa
+        setAuthMessage("Conta criada. Se houver confirmação por e-mail, confirme pelo link enviado e depois entre.", "info");
+        toggleAuthMode();
+      }
+    }
+  } catch (err) {
+    setAuthMessage(traduzErroAuth(err), "error");
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function traduzErroAuth(err) {
+  const m = (err && err.message ? err.message : "").toLowerCase();
+  if (m.includes("invalid login")) return "E-mail ou senha incorretos.";
+  if (m.includes("email not confirmed")) return "E-mail ainda não confirmado. Verifique sua caixa de entrada.";
+  if (m.includes("already registered") || m.includes("already been registered")) return "Esse e-mail já tem conta. Tente entrar.";
+  if (m.includes("password should be")) return "A senha precisa ter pelo menos 6 caracteres.";
+  return err && err.message ? err.message : "Algo deu errado. Tente de novo.";
+}
+
+async function handleLogout() {
+  await flushSave(); // garante que o capítulo atual foi salvo localmente
+  if (state.online) { try { await db.syncNow(); } catch (_) {} } // empurra a fila pendente
+  clearTimeout(state.autosaveTimer);
+  clearTimeout(state.retryTimer);
+  await db.signOut();
+  // limpa estado (o espelho local NÃO é apagado, pra nunca perder algo não sincronizado)
+  Object.assign(state, {
+    user: null, books: [], currentBook: null, chapters: [], currentChapter: null,
+    dirty: false, saving: false, resaveQueued: false, retryDelay: 0,
+  });
+  showView("auth");
+}
+
+/* ===================== 7. BIBLIOTECA ===================== */
+async function loadLibrary() {
+  showView("library");
+  $("#library-greeting").textContent = state.user ? state.user.email : "";
+  const { data, error } = await db.listBooks();
+  if (error) { toast("Não consegui carregar seus livros.", true); return; }
+  state.books = data || [];
+  renderBooks();
+}
+
+function renderBooks() {
+  const grid = $("#books-grid");
+  const empty = $("#books-empty");
+  grid.innerHTML = "";
+
+  if (state.books.length === 0) {
+    grid.hidden = true; empty.hidden = false; return;
+  }
+  grid.hidden = false; empty.hidden = true;
+
+  state.books.forEach((book) => {
+    const card = document.createElement("article");
+    card.className = "book-card";
+    card.innerHTML = `
+      <span class="spine"></span>
+      <div class="card-actions">
+        <button class="btn-icon" data-act="edit" title="Editar" aria-label="Editar">${ICON.edit}</button>
+        <button class="btn-icon danger" data-act="del" title="Excluir" aria-label="Excluir">${ICON.trash}</button>
+      </div>
+      <h3></h3>
+      <div class="desc"></div>
+      <div class="meta"></div>`;
+
+    card.querySelector("h3").textContent = book.title || "Sem título";
+    const desc = card.querySelector(".desc");
+    if (book.description) { desc.textContent = book.description; }
+    else { desc.textContent = "Sem descrição"; desc.classList.add("empty"); }
+    card.querySelector(".meta").textContent = "Atualizado " + formatDate(book.updated_at);
+
+    // abrir o livro ao clicar no corpo do cartão
+    card.addEventListener("click", (e) => {
+      if (e.target.closest("[data-act]")) return; // clicou num botão de ação
+      openBook(book);
+    });
+    card.querySelector('[data-act="edit"]').onclick = () => onEditBook(book);
+    card.querySelector('[data-act="del"]').onclick = () => onDeleteBook(book);
+
+    grid.appendChild(card);
+  });
+}
+
+function onNewBook() {
+  openFormModal({
+    title: "Novo livro",
+    fields: [
+      { name: "title", label: "Título", value: "", placeholder: "Ex: O Caminho Suave" },
+      { name: "description", label: "Descrição (opcional)", value: "", placeholder: "Sobre o que é o livro?", textarea: true },
+    ],
+    confirmText: "Criar livro",
+    onConfirm: async (v) => {
+      const title = v.title || "Sem título";
+      const { data, error } = await db.createBook(title, v.description || "");
+      if (error) { toast("Não consegui criar o livro.", true); return; }
+      state.books.unshift(data);
+      renderBooks();
+      openBook(data); // já entra no livro recém-criado
+    },
+  });
+}
+
+function onEditBook(book) {
+  openFormModal({
+    title: "Editar livro",
+    fields: [
+      { name: "title", label: "Título", value: book.title || "" },
+      { name: "description", label: "Descrição", value: book.description || "", placeholder: "Sobre o que é o livro?", textarea: true },
+    ],
+    onConfirm: async (v) => {
+      const { data, error } = await db.updateBook(book.id, { title: v.title || "Sem título", description: v.description || "" });
+      if (error) { toast("Não consegui salvar as alterações.", true); return; }
+      // atualiza na lista e, se for o livro aberto, no editor
+      const i = state.books.findIndex((b) => b.id === book.id);
+      if (i >= 0) state.books[i] = data;
+      if (state.currentBook && state.currentBook.id === book.id) {
+        state.currentBook = data;
+        $("#book-title").textContent = data.title;
+      }
+      renderBooks();
+    },
+  });
+}
+
+function onDeleteBook(book) {
+  openConfirm({
+    title: "Excluir livro?",
+    message: `“${book.title || "Sem título"}” e todos os capítulos dele serão apagados. Essa ação não pode ser desfeita.`,
+    onConfirm: async () => {
+      const { error } = await db.deleteBook(book.id);
+      if (error) { toast("Não consegui excluir o livro.", true); return; }
+      state.books = state.books.filter((b) => b.id !== book.id);
+      renderBooks();
+    },
+  });
+}
+
+/* ===================== 8. EDITOR + AUTOSAVE ===================== */
+async function openBook(book) {
+  state.currentBook = book;
+  state.currentChapter = null;
+  $("#book-title").textContent = book.title || "Sem título";
+  showView("editor");
+  showEditorEmpty(); // até escolher um capítulo
+
+  const { data, error } = await db.listChapters(book.id);
+  if (error) { toast("Não consegui carregar os capítulos.", true); return; }
+  state.chapters = data || [];
+  renderChapters();
+
+  // abre o primeiro capítulo automaticamente, se houver
+  if (state.chapters.length > 0) selectChapter(state.chapters[0]);
+}
+
+function renderChapters() {
+  const list = $("#chapters-list");
+  const empty = $("#chapters-empty");
+  list.innerHTML = "";
+
+  empty.hidden = state.chapters.length > 0;
+
+  state.chapters.forEach((ch) => {
+    const li = document.createElement("li");
+    li.className = "chapter-item" + (state.currentChapter && state.currentChapter.id === ch.id ? " active" : "");
+    li.dataset.id = ch.id;
+    li.innerHTML = `
+      <span class="ch-title"></span>
+      <span class="ch-actions">
+        <button class="btn-icon" data-act="edit" title="Renomear" aria-label="Renomear">${ICON.edit}</button>
+        <button class="btn-icon danger" data-act="del" title="Excluir" aria-label="Excluir">${ICON.trash}</button>
+      </span>`;
+    li.querySelector(".ch-title").textContent = ch.title || "Sem título";
+
+    // um clique em qualquer lugar da linha abre o capítulo
+    li.addEventListener("click", (e) => {
+      if (e.target.closest("[data-act]")) return; // exceto nos botões de ação
+      selectChapter(ch);
+    });
+    li.querySelector('[data-act="edit"]').onclick = (e) => { e.stopPropagation(); onRenameChapter(ch); };
+    li.querySelector('[data-act="del"]').onclick = (e) => { e.stopPropagation(); onDeleteChapter(ch); };
+
+    list.appendChild(li);
+  });
+}
+
+/* Atualiza só o destaque "active" sem reconstruir a lista (evita rebuild no clique). */
+function markActiveChapter() {
+  const id = state.currentChapter ? String(state.currentChapter.id) : null;
+  document.querySelectorAll("#chapters-list .chapter-item").forEach((el) => {
+    el.classList.toggle("active", el.dataset.id === id);
+  });
+}
+
+async function selectChapter(ch) {
+  // antes de trocar, salva o que estiver pendente do capítulo atual
+  await flushSave();
+  clearTimeout(state.retryTimer); // cancela retry do capítulo anterior
+
+  state.currentChapter = ch;
+  markActiveChapter(); // atualiza só o destaque, sem reconstruir a lista
+
+  // se existe rascunho local não sincronizado deste capítulo, recupera ele
+  const draft = readDraft(ch.id);
+  const draftIsNewer = draft &&
+    ((draft.content || "") !== (ch.content || "") || (draft.title || "") !== (ch.title || ""));
+
+  $("#chapter-title").value = draftIsNewer ? (draft.title || "")   : (ch.title || "");
+  $("#editor-area").value   = draftIsNewer ? (draft.content || "") : (ch.content || "");
+  showEditorActive();
+
+  if (draftIsNewer) {
+    state.dirty = true;
+    setStatus("dirty");
+    toast("Recuperei um rascunho não salvo deste capítulo. Sincronizando…");
+    saveCurrentChapter(); // manda pro servidor já
+  } else {
+    state.dirty = false;
+    setStatus("saved");
+  }
+
+  // foca no fim do texto
+  const area = $("#editor-area");
+  area.focus();
+  area.setSelectionRange(area.value.length, area.value.length);
+}
+
+function showEditorActive() {
+  $("#editor-placeholder").hidden = true;
+  $("#editor-top").hidden = false;
+  $("#editor-body").hidden = false;
+}
+function showEditorEmpty() {
+  $("#editor-placeholder").hidden = false;
+  $("#editor-top").hidden = true;
+  $("#editor-body").hidden = true;
+}
+
+async function onNewChapter() {
+  if (!state.currentBook) return;
+  const n = state.chapters.length + 1;
+  const { data, error } = await db.createChapter(state.currentBook.id, "Capítulo " + n, state.chapters.length);
+  if (error) { toast("Não consegui criar o capítulo.", true); return; }
+  state.chapters.push(data);
+  renderChapters();
+  selectChapter(data);
+}
+
+function onRenameChapter(ch) {
+  openFormModal({
+    title: "Renomear capítulo",
+    fields: [{ name: "title", label: "Título do capítulo", value: ch.title || "" }],
+    onConfirm: async (v) => {
+      const title = v.title || "Sem título";
+      const { data, error } = await db.updateChapter(ch.id, { title });
+      if (error) { toast("Não consegui renomear.", true); return; }
+      const i = state.chapters.findIndex((c) => c.id === ch.id);
+      if (i >= 0) state.chapters[i] = data;
+      if (state.currentChapter && state.currentChapter.id === ch.id) {
+        state.currentChapter = data;
+        $("#chapter-title").value = data.title;
+      }
+      renderChapters();
+    },
+  });
+}
+
+function onDeleteChapter(ch) {
+  openConfirm({
+    title: "Excluir capítulo?",
+    message: `“${ch.title || "Sem título"}” será apagado. Essa ação não pode ser desfeita.`,
+    onConfirm: async () => {
+      const { error } = await db.deleteChapter(ch.id);
+      if (error) { toast("Não consegui excluir o capítulo.", true); return; }
+      clearDraft(ch.id);
+      state.chapters = state.chapters.filter((c) => c.id !== ch.id);
+      if (state.currentChapter && state.currentChapter.id === ch.id) {
+        state.currentChapter = null;
+        if (state.chapters.length > 0) selectChapter(state.chapters[0]);
+        else { showEditorEmpty(); renderChapters(); }
+      } else {
+        renderChapters();
+      }
+    },
+  });
+}
+
+/* ---- indicador de salvamento ---- */
+function setStatus(stateName) {
+  const el = $("#save-status");
+  const label = el.querySelector(".save-label");
+  el.dataset.state = stateName;
+  label.textContent = {
+    saved:  "Salvo",
+    dirty:  "Não salvo",
+    saving: "Salvando…",
+    error:  "Erro ao salvar",
+  }[stateName] || "";
+}
+
+/* ---- rascunho local (rede de segurança extra, por capítulo) ----
+   Espelha o texto a cada tecla. Mesmo que tudo falhe, o rascunho sobrevive
+   e é recuperado ao reabrir o capítulo. Usa os helpers de storage da seção 4. */
+const DRAFT_PREFIX = "manuscrito:draft:";
+function saveDraft(id, fields) { lsSet(DRAFT_PREFIX + id, { ...fields, ts: Date.now() }); }
+function clearDraft(id) { lsDel(DRAFT_PREFIX + id); }
+function readDraft(id) { return lsGet(DRAFT_PREFIX + id, null); }
+
+/* ---- autosave (debounce) ---- */
+function onEditorInput() {
+  if (!state.currentChapter) return;
+  state.dirty = true;
+  setStatus("dirty");
+  // espelho local instantâneo (síncrono): nada se perde mesmo se fechar agora
+  saveDraft(state.currentChapter.id, {
+    title: $("#chapter-title").value,
+    content: $("#editor-area").value,
+  });
+  clearTimeout(state.autosaveTimer);
+  state.autosaveTimer = setTimeout(saveCurrentChapter, AUTOSAVE_MS);
+}
+
+async function saveCurrentChapter() {
+  if (!state.currentChapter) return;
+  // já está salvando? não perca o que foi digitado: marca pra salvar de novo ao terminar
+  if (state.saving) { state.resaveQueued = true; return; }
+  if (!state.dirty) return;
+
+  clearTimeout(state.autosaveTimer);
+  clearTimeout(state.retryTimer);
+  state.saving = true;
+  state.resaveQueued = false;
+  setStatus("saving");
+
+  const id = state.currentChapter.id;
+  const fields = { title: $("#chapter-title").value.trim() || "Sem título", content: $("#editor-area").value };
+
+  let result;
+  try {
+    result = await db.updateChapter(id, fields);
+  } catch (e) {
+    result = { error: e };
+  }
+  state.saving = false;
+
+  if (result.error) {
+    // não limpa "dirty" nem o rascunho local: tenta de novo sozinho
+    setStatus("error");
+    toast("Sem conexão para salvar. Suas alterações estão guardadas e vou tentar de novo.", true);
+    scheduleRetry();
+    return;
+  }
+
+  // sucesso: zera o backoff de retry
+  state.retryDelay = 0;
+
+  // atualiza estado/lista SEM mexer no que você está vendo no editor
+  const data = result.data;
+  const i = state.chapters.findIndex((c) => c.id === id);
+  if (i >= 0) state.chapters[i] = data;
+  const activeTitle = document.querySelector(".chapter-item.active .ch-title");
+  if (activeTitle) activeTitle.textContent = data.title;
+
+  // só considera "salvo" se nada novo entrou durante o save
+  if (state.resaveQueued) {
+    // digitou enquanto salvava → salva de novo a versão mais recente
+    state.resaveQueued = false;
+    return saveCurrentChapter();
+  }
+  if (state.currentChapter && state.currentChapter.id === id) state.currentChapter = data;
+  state.dirty = false;
+  state.savedAt = Date.now();
+  clearDraft(id);            // a rede confirmou: pode descartar o rascunho local
+  setStatus("saved");
+}
+
+/* Retentativa automática com backoff (3s, 6s, 12s, 24s, 30s…) enquanto a rede não volta. */
+function scheduleRetry() {
+  state.retryDelay = Math.min(state.retryDelay ? state.retryDelay * 2 : RETRY_MIN_MS, RETRY_MAX_MS);
+  clearTimeout(state.retryTimer);
+  state.retryTimer = setTimeout(() => {
+    if (state.dirty && state.currentChapter && !state.saving) saveCurrentChapter();
+  }, state.retryDelay);
+}
+
+/* Salva imediatamente o que estiver pendente e ESPERA terminar
+   (ao trocar de capítulo, voltar, sair). Aguarda inclusive um save já em andamento. */
+async function flushSave() {
+  // espera um save em andamento concluir (com teto de segurança ~5s)
+  for (let i = 0; i < 100 && state.saving; i++) {
+    await new Promise((r) => setTimeout(r, 50));
+  }
+  if (state.dirty && state.currentChapter) {
+    await saveCurrentChapter();
+  }
+}
+
+async function backToLibrary() {
+  await flushSave();
+  state.currentBook = null;
+  state.currentChapter = null;
+  await loadLibrary();
+}
+
+/* ===================== 9. BOOT ===================== */
+function wireEvents() {
+  initOffline(); // ouvintes de online/offline + indicador de conexão
+
+  // login
+  $("#auth-form").addEventListener("submit", handleAuthSubmit);
+  $("#auth-toggle-link").addEventListener("click", toggleAuthMode);
+  $("#logout-btn").addEventListener("click", handleLogout);
+
+  // biblioteca
+  $("#new-book-btn").addEventListener("click", onNewBook);
+  $("#empty-new-book-btn").addEventListener("click", onNewBook);
+
+  // editor
+  $("#back-btn").addEventListener("click", backToLibrary);
+  $("#book-rename").addEventListener("click", () => { if (state.currentBook) onEditBook(state.currentBook); });
+  $("#new-chapter-btn").addEventListener("click", onNewChapter);
+  $("#placeholder-new-chapter-btn").addEventListener("click", onNewChapter);
+  $("#save-btn").addEventListener("click", () => { state.dirty = true; saveCurrentChapter(); });
+
+  // autosave: digitação no corpo e no título do capítulo
+  $("#editor-area").addEventListener("input", onEditorInput);
+  $("#chapter-title").addEventListener("input", onEditorInput);
+  // ao sair do campo, salva na hora
+  $("#editor-area").addEventListener("blur", flushSave);
+  $("#chapter-title").addEventListener("blur", flushSave);
+
+  // aviso antes de fechar/recarregar com alterações não salvas
+  window.addEventListener("beforeunload", (e) => {
+    if (state.dirty) { e.preventDefault(); e.returnValue = ""; }
+  });
+  // ao minimizar/trocar de aba (e no celular ao sair do app), tenta salvar
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden" && state.dirty) flushSave();
+  });
+}
+
+async function boot() {
+  wireEvents();
+
+  // entra no app: drena a fila pendente e aquece o espelho local (quando online)
+  async function enterApp(user) {
+    state.user = user;
+    if (state.online) { try { await flushQueue(); await refreshSnapshot(); } catch (_) {} }
+    await loadLibrary();
+  }
+
+  // reage a login/logout (inclusive renovação de sessão)
+  db.onAuthChange((event, session) => {
+    if (session && session.user) {
+      const inApp = $("#view-library").classList.contains("active") ||
+                    $("#view-editor").classList.contains("active");
+      state.user = session.user;
+      if (!inApp) enterApp(session.user); // não recarrega a cada refresh de token
+    } else {
+      state.user = null;
+      showView("auth");
+    }
+  });
+
+  // checa se já existe sessão salva (offline, o supabase-js devolve a sessão guardada)
+  const session = await db.getSession();
+  if (session && session.user) {
+    enterApp(session.user);
+  } else {
+    showView("auth");
+  }
+
+  // registra o Service Worker (só em produção; ignorado no preview/sem config)
+  if (typeof supabaseClient !== "undefined" && supabaseClient && "serviceWorker" in navigator) {
+    navigator.serviceWorker.register("/service-worker.js").catch(() => {});
+  }
+}
+
+document.addEventListener("DOMContentLoaded", boot);
+
+  </script>
+</body>
+</html>
