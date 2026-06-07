@@ -22,8 +22,8 @@
 /* Pegue em: Supabase -> Project Settings -> API
    - SUPABASE_URL  = "Project URL"
    - SUPABASE_ANON_KEY = chave "anon public" */
-const SUPABASE_URL = "COLE_AQUI_SUA_PROJECT_URL";      // ex: https://abcd1234.supabase.co
-const SUPABASE_ANON_KEY = "COLE_AQUI_SUA_CHAVE_ANON";  // chave anon public
+const SUPABASE_URL = "COLE_AQUI_SUA_PROJECT_URL";      // ex: https://dgmqgcdvcdjetjarcpbj.supabase.co
+const SUPABASE_ANON_KEY = "COLE_AQUI_SUA_CHAVE_ANON";  // sb_publishable_vmrpf_9lB_ZF81M7UicusA_nCdXxtUO
 
 /* Se ainda não configurou, mostra um aviso claro em vez de quebrar. */
 const NOT_CONFIGURED = SUPABASE_URL.startsWith("COLE_AQUI") || SUPABASE_ANON_KEY.startsWith("COLE_AQUI");
