@@ -23,7 +23,7 @@
    - SUPABASE_URL  = "Project URL"
    - SUPABASE_ANON_KEY = chave "anon public" */
 const SUPABASE_URL = "https://sigmwtkrtboaovibbgjy.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_vmrpf_9lB_ZF81M7UicusA_nCdXxtUO";
+const SUPABASE_ANON_KEY = "sb_publishable_myFO7hxmPiSZeyQXbIa3DQ_MyZESlMW";
 
 /* Se ainda não configurou, mostra um aviso claro em vez de quebrar. */
 const NOT_CONFIGURED = SUPABASE_URL.startsWith("COLE_AQUI") || SUPABASE_ANON_KEY.startsWith("COLE_AQUI");
