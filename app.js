@@ -22,7 +22,7 @@
 /* Pegue em: Supabase -> Project Settings -> API
    - SUPABASE_URL  = "Project URL"
    - SUPABASE_ANON_KEY = chave "anon public" */
-const SUPABASE_URL = "https://dgmqgcdvcdjetjarcpbj.supabase.co";
+const SUPABASE_URL = "https://sigmwtkrtboaovibbgjy.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_vmrpf_9lB_ZF81M7UicusA_nCdXxtUO";
 
 /* Se ainda não configurou, mostra um aviso claro em vez de quebrar. */
@@ -59,7 +59,7 @@ const state = {
   syncing: false,      // está drenando a fila pro servidor agora?
   authMode: "login",   // "login" ou "signup"
 };
-const AUTOSAVE_MS = 1500;  // salva 1,5s depois que você para de digitar
+const AUTOSAVE_MS = 1500;  // salva 0,9s depois que você para de digitar
 const RETRY_MIN_MS = 3000; // 1ª retentativa após erro
 const RETRY_MAX_MS = 30000;// teto do backoff
 
