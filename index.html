@@ -26,25 +26,45 @@
   <section id="view-auth" class="view auth-view active">
     <div class="auth-card">
       <div class="brand">Manuscrito<span class="dot">.</span></div>
-      <p class="auth-sub">Seu caderno privado para escrever um livro, capítulo por capítulo.</p>
 
-      <!-- form com preventDefault no JS (Enter envia) -->
-      <form id="auth-form" autocomplete="on">
-        <div class="field">
-          <label for="auth-email">E-mail</label>
-          <input class="input" type="email" id="auth-email" placeholder="voce@email.com" required />
-        </div>
-        <div class="field">
-          <label for="auth-password">Senha</label>
-          <input class="input" type="password" id="auth-password" placeholder="••••••••" required minlength="6" />
-        </div>
-        <button type="submit" class="btn-primary" id="auth-submit">Entrar</button>
-        <div class="auth-msg" id="auth-msg"></div>
-      </form>
+      <!-- conteúdo padrão (login/cadastro) -->
+      <div id="auth-default">
+        <p class="auth-sub">Seu caderno privado para escrever um livro, capítulo por capítulo.</p>
 
-      <div class="auth-toggle">
-        <span id="auth-toggle-text">Ainda não tem conta?</span>
-        <a id="auth-toggle-link">Criar conta</a>
+        <!-- form com preventDefault no JS (Enter envia) -->
+        <form id="auth-form" autocomplete="on">
+          <div class="field">
+            <label for="auth-email">E-mail</label>
+            <input class="input" type="email" id="auth-email" placeholder="voce@email.com" required />
+          </div>
+          <div class="field">
+            <label for="auth-password">Senha</label>
+            <input class="input" type="password" id="auth-password" placeholder="••••••••" required minlength="6" />
+          </div>
+          <button type="submit" class="btn-primary" id="auth-submit">Entrar</button>
+          <div class="auth-msg" id="auth-msg"></div>
+        </form>
+
+        <div class="auth-toggle">
+          <span id="auth-toggle-text">Ainda não tem conta?</span>
+          <a id="auth-toggle-link">Criar conta</a>
+        </div>
+      </div>
+
+      <!-- estado de sucesso do cadastro (com animação) -->
+      <div id="auth-success" class="auth-success" hidden>
+        <div class="check-wrap">
+          <svg viewBox="0 0 84 84" width="84" height="84" aria-hidden="true">
+            <circle class="check-circle-bg" cx="42" cy="42" r="40"/>
+            <circle class="check-ring" cx="42" cy="42" r="27"/>
+            <path class="check-tick" d="M30 43 l8 8 l16 -18"/>
+          </svg>
+        </div>
+        <h2 class="auth-success-title">Conta criada!</h2>
+        <p class="auth-success-sub">Enviamos um e-mail de confirmação para <b id="auth-success-email"></b>.</p>
+        <p class="auth-success-sub">Abra o link da mensagem pra ativar sua conta e depois é só entrar.</p>
+        <p class="auth-success-hint">Não chegou em alguns minutos? Confira a caixa de spam.</p>
+        <div class="auth-success-back"><a id="auth-success-back">← Voltar para o login</a></div>
       </div>
     </div>
   </section>
@@ -52,8 +72,10 @@
   <!-- ============================ TELA: BIBLIOTECA ============================ -->
   <section id="view-library" class="view">
     <header class="topbar">
-      <div class="brand-sm">Manuscrito<span class="dot">.</span></div>
-      <button class="btn-ghost" id="logout-btn">Sair</button>
+      <div class="topbar-inner">
+        <div class="brand-sm">Manuscrito<span class="dot">.</span></div>
+        <button class="btn-ghost" id="logout-btn">Sair</button>
+      </div>
     </header>
 
     <main class="library">
