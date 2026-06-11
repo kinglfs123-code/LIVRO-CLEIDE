@@ -59,9 +59,12 @@ const state = {
   syncing: false,      // está drenando a fila pro servidor agora?
   authMode: "login",   // "login" ou "signup"
 };
-const AUTOSAVE_MS = 1500;  // salva 0,9s depois que você para de digitar
+const AUTOSAVE_MS = 1500;  // salva 1,5s depois que você para de digitar
 const RETRY_MIN_MS = 3000; // 1ª retentativa após erro
 const RETRY_MAX_MS = 30000;// teto do backoff
+
+// Nome de quem usa o app (aparece na saudação da biblioteca). Troque aqui.
+const APP_OWNER = "Cleide";
 
 /* ===================== 3. CAMADA DB (offline-first) =====================
    Estratégia:
@@ -488,7 +491,7 @@ async function handleLogout() {
 /* ===================== 7. BIBLIOTECA ===================== */
 async function loadLibrary() {
   showView("library");
-  $("#library-greeting").textContent = state.user ? state.user.email : "";
+  $("#library-title").textContent = "Olá, " + APP_OWNER + "!";
   const { data, error } = await db.listBooks();
   if (error) { toast("Não consegui carregar seus livros.", true); return; }
   state.books = data || [];
@@ -866,7 +869,6 @@ function wireEvents() {
   $("#logout-btn").addEventListener("click", handleLogout);
 
   // biblioteca
-  $("#new-book-btn").addEventListener("click", onNewBook);
   $("#empty-new-book-btn").addEventListener("click", onNewBook);
 
   // editor
