@@ -47,6 +47,7 @@
   --font-sans:  "Hanken Grotesk", system-ui, -apple-system, "Segoe UI", sans-serif;
 
   --measure: 64ch;   /* largura confortável de leitura no editor */
+  --page-max: 980px; /* largura da coluna central (topbar + biblioteca) */
 }
 
 /* ---------- Reset enxuto ---------- */
@@ -185,18 +186,69 @@ textarea.input { resize: vertical; min-height: 84px; line-height: 1.5; }
 .auth-toggle a { color: var(--accent); font-weight: 600; cursor: pointer; text-decoration: none; }
 .auth-toggle a:hover { text-decoration: underline; }
 
+/* ---------- estado de sucesso do cadastro (animado) ---------- */
+.auth-success { text-align: center; }
+.check-wrap { width: 84px; height: 84px; margin: 4px auto 22px; }
+.check-circle-bg {
+  fill: var(--accent-soft); transform-origin: center;
+  animation: check-pop .45s cubic-bezier(.2,.8,.3,1.2) both;
+}
+.check-ring {
+  fill: none; stroke: var(--accent); stroke-width: 3.5;
+  stroke-dasharray: 170; stroke-dashoffset: 170;
+  animation: check-draw .55s ease .15s forwards;
+}
+.check-tick {
+  fill: none; stroke: var(--accent); stroke-width: 5; stroke-linecap: round; stroke-linejoin: round;
+  stroke-dasharray: 48; stroke-dashoffset: 48;
+  animation: check-draw .35s ease .55s forwards;
+}
+@keyframes check-pop { 0% { transform: scale(.4); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+@keyframes check-draw { to { stroke-dashoffset: 0; } }
+
+.auth-success-title {
+  font-family: var(--font-serif); font-size: 1.6rem; font-weight: 500; margin: 0 0 10px;
+  animation: auth-rise .5s ease .5s both;
+}
+.auth-success-sub {
+  color: var(--ink-soft); font-size: .96rem; line-height: 1.55; margin: 0 0 6px;
+  animation: auth-rise .5s ease .62s both;
+}
+.auth-success-sub b { color: var(--ink); }
+.auth-success-hint {
+  color: var(--ink-faint); font-size: .83rem; margin: 14px 0 22px;
+  animation: auth-rise .5s ease .74s both;
+}
+.auth-success-back { animation: auth-rise .5s ease .86s both; }
+.auth-success-back a { color: var(--accent); font-weight: 600; cursor: pointer; text-decoration: none; font-size: .92rem; }
+.auth-success-back a:hover { text-decoration: underline; }
+@keyframes auth-rise { 0% { opacity: 0; transform: translateY(8px); } 100% { opacity: 1; transform: translateY(0); } }
+
+/* respeita quem prefere menos movimento */
+@media (prefers-reduced-motion: reduce) {
+  .check-circle-bg, .check-ring, .check-tick,
+  .auth-success-title, .auth-success-sub, .auth-success-hint, .auth-success-back {
+    animation: none !important;
+  }
+  .check-ring, .check-tick { stroke-dashoffset: 0; }
+}
+
 /* =========================================================
    TOPO (biblioteca)
    ========================================================= */
 .topbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px 26px;
   border-bottom: 1px solid var(--line);
   background: rgba(251,248,241,.7);
   backdrop-filter: blur(6px);
   position: sticky; top: 0; z-index: 10;
+}
+.topbar-inner {
+  max-width: var(--page-max);
+  margin: 0 auto;
+  padding: 16px 26px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 .brand-sm {
   font-family: var(--font-serif);
@@ -210,9 +262,9 @@ textarea.input { resize: vertical; min-height: 84px; line-height: 1.5; }
    BIBLIOTECA
    ========================================================= */
 .library {
-  max-width: 980px;
+  max-width: var(--page-max);
   margin: 0 auto;
-  padding: 40px 26px 80px;
+  padding: 48px 26px 64px;
 }
 .library-head {
   display: flex;
@@ -573,25 +625,45 @@ textarea.input { resize: vertical; min-height: 84px; line-height: 1.5; }
   <section id="view-auth" class="view auth-view active">
     <div class="auth-card">
       <div class="brand">Manuscrito<span class="dot">.</span></div>
-      <p class="auth-sub">Seu caderno privado para escrever um livro, capítulo por capítulo.</p>
 
-      <!-- form com preventDefault no JS (Enter envia) -->
-      <form id="auth-form" autocomplete="on">
-        <div class="field">
-          <label for="auth-email">E-mail</label>
-          <input class="input" type="email" id="auth-email" placeholder="voce@email.com" required />
-        </div>
-        <div class="field">
-          <label for="auth-password">Senha</label>
-          <input class="input" type="password" id="auth-password" placeholder="••••••••" required minlength="6" />
-        </div>
-        <button type="submit" class="btn-primary" id="auth-submit">Entrar</button>
-        <div class="auth-msg" id="auth-msg"></div>
-      </form>
+      <!-- conteúdo padrão (login/cadastro) -->
+      <div id="auth-default">
+        <p class="auth-sub">Seu caderno privado para escrever um livro, capítulo por capítulo.</p>
 
-      <div class="auth-toggle">
-        <span id="auth-toggle-text">Ainda não tem conta?</span>
-        <a id="auth-toggle-link">Criar conta</a>
+        <!-- form com preventDefault no JS (Enter envia) -->
+        <form id="auth-form" autocomplete="on">
+          <div class="field">
+            <label for="auth-email">E-mail</label>
+            <input class="input" type="email" id="auth-email" placeholder="voce@email.com" required />
+          </div>
+          <div class="field">
+            <label for="auth-password">Senha</label>
+            <input class="input" type="password" id="auth-password" placeholder="••••••••" required minlength="6" />
+          </div>
+          <button type="submit" class="btn-primary" id="auth-submit">Entrar</button>
+          <div class="auth-msg" id="auth-msg"></div>
+        </form>
+
+        <div class="auth-toggle">
+          <span id="auth-toggle-text">Ainda não tem conta?</span>
+          <a id="auth-toggle-link">Criar conta</a>
+        </div>
+      </div>
+
+      <!-- estado de sucesso do cadastro (com animação) -->
+      <div id="auth-success" class="auth-success" hidden>
+        <div class="check-wrap">
+          <svg viewBox="0 0 84 84" width="84" height="84" aria-hidden="true">
+            <circle class="check-circle-bg" cx="42" cy="42" r="40"/>
+            <circle class="check-ring" cx="42" cy="42" r="27"/>
+            <path class="check-tick" d="M30 43 l8 8 l16 -18"/>
+          </svg>
+        </div>
+        <h2 class="auth-success-title">Conta criada!</h2>
+        <p class="auth-success-sub">Enviamos um e-mail de confirmação para <b id="auth-success-email"></b>.</p>
+        <p class="auth-success-sub">Abra o link da mensagem pra ativar sua conta e depois é só entrar.</p>
+        <p class="auth-success-hint">Não chegou em alguns minutos? Confira a caixa de spam.</p>
+        <div class="auth-success-back"><a id="auth-success-back">← Voltar para o login</a></div>
       </div>
     </div>
   </section>
@@ -599,8 +671,10 @@ textarea.input { resize: vertical; min-height: 84px; line-height: 1.5; }
   <!-- ============================ TELA: BIBLIOTECA ============================ -->
   <section id="view-library" class="view">
     <header class="topbar">
-      <div class="brand-sm">Manuscrito<span class="dot">.</span></div>
-      <button class="btn-ghost" id="logout-btn">Sair</button>
+      <div class="topbar-inner">
+        <div class="brand-sm">Manuscrito<span class="dot">.</span></div>
+        <button class="btn-ghost" id="logout-btn">Sair</button>
+      </div>
     </header>
 
     <main class="library">
@@ -1023,6 +1097,20 @@ function setAuthMessage(text, type) {
   el.className = "auth-msg" + (type ? " " + type : "");
 }
 
+// mostra o painel "Conta criada!" (com a animação) no lugar do formulário
+function showAuthSuccess(email) {
+  $("#auth-success-email").textContent = email;
+  $("#auth-default").hidden = true;
+  $("#auth-success").hidden = false; // ao deixar de ser display:none, as animações disparam
+}
+// volta do painel de sucesso para o formulário (em modo login)
+function showAuthForm() {
+  $("#auth-success").hidden = true;
+  $("#auth-default").hidden = false;
+  if (state.authMode !== "login") toggleAuthMode();
+  setAuthMessage("");
+}
+
 function toggleAuthMode() {
   state.authMode = state.authMode === "login" ? "signup" : "login";
   const isLogin = state.authMode === "login";
@@ -1052,10 +1140,10 @@ async function handleAuthSubmit(e) {
       if (error) throw error;
       if (data.session) {
         setAuthMessage("Conta criada! Entrando…", "info");
+        // o onAuthStateChange abre a biblioteca
       } else {
-        // confirmação de e-mail provavelmente está ativa
-        setAuthMessage("Conta criada. Se houver confirmação por e-mail, confirme pelo link enviado e depois entre.", "info");
-        toggleAuthMode();
+        // confirmação de e-mail ativa: mostra o painel animado de "Conta criada!"
+        showAuthSuccess(email);
       }
     }
   } catch (err) {
@@ -1466,6 +1554,7 @@ function wireEvents() {
   // login
   $("#auth-form").addEventListener("submit", handleAuthSubmit);
   $("#auth-toggle-link").addEventListener("click", toggleAuthMode);
+  $("#auth-success-back").addEventListener("click", showAuthForm);
   $("#logout-btn").addEventListener("click", handleLogout);
 
   // biblioteca
