@@ -764,35 +764,6 @@ function syncFormatBar() {
   });
 }
 
-/* ---- navegação inferior (só na biblioteca) ---- */
-function initBottomNav() {
-  $("#nav-biblioteca").addEventListener("click", () => {
-    closeNavMenu(); window.scrollTo({ top: 0, behavior: "smooth" });
-  });
-  // "Escrever": abre o livro mais recente, ou cria o primeiro se não houver
-  $("#nav-escrever").addEventListener("click", () => {
-    closeNavMenu();
-    if (state.books && state.books.length) openBook(state.books[0]);
-    else onNewBook();
-  });
-  // "Conta": abre/fecha o menuzinho
-  $("#nav-conta").addEventListener("click", (e) => {
-    e.stopPropagation();
-    const m = $("#nav-menu");
-    m.hidden = !m.hidden;
-    $("#nav-conta").classList.toggle("active", !m.hidden);
-  });
-  $("#nav-logout").addEventListener("click", () => { closeNavMenu(); handleLogout(); });
-  // clicar fora fecha o menu
-  document.addEventListener("click", (e) => {
-    if (!$("#navbar").contains(e.target)) closeNavMenu();
-  });
-}
-function closeNavMenu() {
-  const m = $("#nav-menu"); if (m) m.hidden = true;
-  const c = $("#nav-conta"); if (c) c.classList.remove("active");
-}
-
 async function onNewChapter() {
   if (!state.currentBook) return;
   const n = state.chapters.length + 1;
@@ -971,9 +942,6 @@ function wireEvents() {
 
   // biblioteca
   $("#empty-new-book-btn").addEventListener("click", onNewBook);
-
-  // navegação inferior (biblioteca)
-  initBottomNav();
 
   // editor
   $("#back-btn").addEventListener("click", backToLibrary);
