@@ -1,185 +1,544 @@
-# Manuscrito
+/* =========================================================
+   Manuscrito — estilos
+   Estética: "papel quente", minimalista, foco total na escrita.
+   - Títulos e editor em serifa (Newsreader) -> clima de livro
+   - Interface (botões, rótulos) em grotesca limpa (Hanken Grotesk)
+   - Desktop first, com um fallback simples para telas menores
+   ========================================================= */
 
-Caderno privado para escrever um livro, capítulo por capítulo. Um único usuário acessa por um link, escreve no navegador (desktop ou celular), e tudo salva sozinho — **inclusive offline**.
+/* ---------- Tokens (mude aqui pra retematizar o app inteiro) ---------- */
+:root {
+  --paper:       #f6f2e9;   /* fundo geral, cor de papel */
+  --surface:     #fbf8f1;   /* cartões e painéis */
+  --surface-2:   #efe9db;   /* hover / preenchimentos sutis */
+  --ink:         #221f1a;   /* texto principal */
+  --ink-soft:    #5b5549;   /* texto secundário */
+  --ink-faint:   #938c7d;   /* placeholders / texto terciário */
+  --line:        #e4ded0;   /* bordas */
+  --line-strong: #d4ccb9;
+  --accent:      #9c4a2f;   /* terracota, usado com parcimônia */
+  --accent-ink:  #803a23;   /* hover do accent */
+  --accent-soft: #f0e2d8;   /* fundo tom-sobre-tom do accent */
+  --danger:      #a4392b;
+  --ok:          #46703f;   /* verde discreto do "Salvo" */
 
-Stack: **HTML + CSS + JavaScript puro**, **Supabase** (Auth + Postgres), deploy na **Vercel** via interface web do GitHub. É um **PWA offline-first** (instalável, abre sem internet).
+  --radius:    11px;
+  --radius-sm: 7px;
+  --shadow-sm: 0 1px 2px rgba(40,33,20,.05), 0 2px 6px rgba(40,33,20,.05);
+  --shadow-md: 0 8px 30px rgba(40,33,20,.12);
 
----
+  --font-serif: "Newsreader", Georgia, "Times New Roman", serif;
+  --font-sans:  "Hanken Grotesk", system-ui, -apple-system, "Segoe UI", sans-serif;
 
-## Sumário
+  --measure: 64ch;   /* largura confortável de leitura no editor */
+}
 
-- [Arquivos e onde cada um vai](#arquivos-e-onde-cada-um-vai)
-- [O que o app faz](#o-que-o-app-faz)
-- [Como colocar no ar (passo a passo)](#como-colocar-no-ar-passo-a-passo)
-- [As duas edições manuais](#as-duas-edições-manuais)
-- [Autosave](#autosave)
-- [Offline e PWA](#offline-e-pwa)
-- [Segurança](#segurança)
-- [Banco de dados](#banco-de-dados)
-- [Decisões tomadas](#decisões-tomadas)
-- [Fora do escopo (por enquanto)](#fora-do-escopo-por-enquanto)
-- [Próximo passo opcional](#próximo-passo-opcional)
+/* ---------- Reset enxuto ---------- */
+*, *::before, *::after { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  color: var(--ink);
+  background: var(--paper);
+  /* leve atmosfera: um brilho quente no topo, bem sutil */
+  background-image: radial-gradient(120% 80% at 50% -10%, #fbf7ee 0%, var(--paper) 55%);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+button { font-family: inherit; cursor: pointer; }
+input, textarea { font-family: inherit; }
+h1, h2, h3 { margin: 0; font-weight: 500; }
 
----
+/* ---------- Sistema de views (telas) ---------- */
+.view { display: none; min-height: 100%; }
+#view-auth.active    { display: flex; }
+#view-library.active { display: block; }
+#view-editor.active  { display: flex; }
 
-## Arquivos e onde cada um vai
+/* ---------- Botões ---------- */
+.btn-primary {
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: #fdf6ee;
+  padding: 10px 18px;
+  border-radius: var(--radius-sm);
+  font-size: .92rem;
+  font-weight: 600;
+  letter-spacing: .01em;
+  transition: background .15s ease, transform .05s ease, box-shadow .15s ease;
+}
+.btn-primary:hover  { background: var(--accent-ink); border-color: var(--accent-ink); }
+.btn-primary:active { transform: translateY(1px); }
+.btn-primary:disabled { opacity: .55; cursor: not-allowed; }
 
-**Vão para a raiz do repositório no GitHub** (são o app que a Vercel publica):
+.btn-ghost {
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--ink-soft);
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  font-size: .9rem;
+  font-weight: 500;
+  transition: background .15s ease, color .15s ease;
+}
+.btn-ghost:hover { background: var(--surface-2); color: var(--ink); }
 
-| Arquivo | O que é |
-|---|---|
-| `index.html` | As três telas: login, biblioteca e editor. |
-| `app.css` | Tema "papel quente" (claro, acento terracota, fontes Newsreader + Hanken Grotesk). |
-| `app.js` | Toda a lógica: auth, CRUD, editor, autosave e o motor offline. **Receba as credenciais aqui.** |
-| `vercel.json` | Cabeçalhos de segurança + CSP. **Troque a origem do Supabase aqui.** |
-| `service-worker.js` | Faz o app abrir offline (cacheia o "casco", fontes e a lib). |
-| `manifest.webmanifest` | Torna o app instalável (ícone na tela inicial). |
-| `icon-192.png`, `icon-512.png`, `icon-maskable-512.png` | Ícones do PWA. |
+.btn-icon {
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--ink-faint);
+  width: 30px; height: 30px;
+  border-radius: var(--radius-sm);
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 1rem; line-height: 1;
+  transition: background .15s ease, color .15s ease;
+}
+.btn-icon:hover { background: var(--surface-2); color: var(--ink); }
+.btn-icon.danger:hover { background: #f6e3df; color: var(--danger); }
+/* ícones SVG: mesmo tamanho exato, monocromáticos, herdam a cor do botão */
+.btn-icon svg {
+  width: 16px; height: 16px; display: block;
+  fill: none; stroke: currentColor;
+  stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round;
+}
 
-**Roda uma vez no Supabase (NÃO vai para o repo):**
+/* ---------- Campos ---------- */
+.field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+.field label { font-size: .82rem; font-weight: 600; color: var(--ink-soft); }
+.input {
+  width: 100%;
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--ink);
+  padding: 11px 13px;
+  border-radius: var(--radius-sm);
+  font-size: .95rem;
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+.input::placeholder { color: var(--ink-faint); }
+.input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+textarea.input { resize: vertical; min-height: 84px; line-height: 1.5; }
 
-| Arquivo | O que é |
-|---|---|
-| `supabase_setup.sql` | Cria as tabelas, gatilhos e as políticas de segurança (RLS). Idempotente: pode rodar de novo sem quebrar. |
+/* =========================================================
+   TELA DE LOGIN
+   ========================================================= */
+.auth-view { align-items: center; justify-content: center; padding: 24px; }
+.auth-card {
+  width: 100%;
+  max-width: 380px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-md);
+  padding: 40px 34px 34px;
+}
+.brand {
+  font-family: var(--font-serif);
+  font-size: 2rem;
+  font-weight: 500;
+  letter-spacing: -.01em;
+  color: var(--ink);
+}
+.brand .dot { color: var(--accent); }
+.auth-sub {
+  margin: 6px 0 26px;
+  color: var(--ink-soft);
+  font-size: .95rem;
+  line-height: 1.45;
+}
+.auth-card .btn-primary { width: 100%; margin-top: 4px; }
+.auth-msg {
+  min-height: 18px;
+  margin: 12px 2px 0;
+  font-size: .85rem;
+  line-height: 1.4;
+}
+.auth-msg.error { color: var(--danger); }
+.auth-msg.info  { color: var(--ok); }
+.auth-toggle {
+  margin-top: 20px;
+  text-align: center;
+  font-size: .88rem;
+  color: var(--ink-soft);
+}
+.auth-toggle a { color: var(--accent); font-weight: 600; cursor: pointer; text-decoration: none; }
+.auth-toggle a:hover { text-decoration: underline; }
 
-**Só para você visualizar (NÃO vai para lugar nenhum):**
+/* =========================================================
+   TOPO (biblioteca)
+   ========================================================= */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 26px;
+  border-bottom: 1px solid var(--line);
+  background: rgba(251,248,241,.7);
+  backdrop-filter: blur(6px);
+  position: sticky; top: 0; z-index: 10;
+}
+.brand-sm {
+  font-family: var(--font-serif);
+  font-size: 1.3rem;
+  font-weight: 500;
+  color: var(--ink);
+}
+.brand-sm .dot { color: var(--accent); }
 
-| Arquivo | O que é |
-|---|---|
-| `preview.html` | Versão self-contained com banco fake em memória, para conferir o visual e o fluxo. Não simula offline nem sincronização. |
+/* =========================================================
+   BIBLIOTECA
+   ========================================================= */
+.library {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 40px 26px 80px;
+}
+.library-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: 28px;
+  gap: 16px;
+}
+.library-head h1 {
+  font-family: var(--font-serif);
+  font-size: 2rem;
+  font-weight: 500;
+  letter-spacing: -.01em;
+}
+.library-head p { margin: 4px 0 0; color: var(--ink-soft); font-size: .92rem; }
 
----
+.books-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(248px, 1fr));
+  gap: 18px;
+}
+.book-card {
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 22px 20px 18px;
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  transition: transform .12s ease, box-shadow .15s ease, border-color .15s ease;
+  min-height: 150px;
+  display: flex;
+  flex-direction: column;
+}
+.book-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--line-strong);
+}
+.book-card .spine {
+  position: absolute; left: 0; top: 14px; bottom: 14px;
+  width: 3px; border-radius: 3px; background: var(--accent);
+  opacity: .8;
+}
+.book-card h3 {
+  font-family: var(--font-serif);
+  font-size: 1.32rem;
+  font-weight: 500;
+  line-height: 1.25;
+  color: var(--ink);
+  margin-bottom: 6px;
+  padding-left: 6px;
+}
+.book-card .desc {
+  flex: 1;
+  padding-left: 6px;
+  font-size: .9rem;
+  color: var(--ink-soft);
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.book-card .desc.empty { color: var(--ink-faint); font-style: italic; }
+.book-card .meta {
+  padding-left: 6px;
+  margin-top: 14px;
+  font-size: .76rem;
+  color: var(--ink-faint);
+  letter-spacing: .01em;
+}
+.book-card .card-actions {
+  position: absolute; top: 12px; right: 10px;
+  display: flex; gap: 2px;
+  opacity: 0; pointer-events: none; transition: opacity .15s ease;
+}
+.book-card:hover .card-actions,
+.book-card:focus-within .card-actions { opacity: 1; pointer-events: auto; }
 
-## O que o app faz
+/* estados vazios */
+.empty {
+  text-align: center;
+  padding: 70px 20px;
+  color: var(--ink-soft);
+}
+.empty .empty-mark { font-family: var(--font-serif); font-size: 2.4rem; color: var(--line-strong); }
+.empty h2 { font-family: var(--font-serif); font-weight: 500; font-size: 1.4rem; margin: 10px 0 6px; }
+.empty p { margin: 0 0 20px; font-size: .95rem; }
 
-- **Login** por e-mail e senha (Supabase Auth), com a sessão lembrada ao voltar.
-- **Biblioteca**: lista seus livros; criar, renomear e excluir livro.
-- **Capítulos**: criar, renomear, excluir; abrir com um clique.
-- **Editor** amplo, com fonte serifada confortável.
-- **Autosave** robusto, com indicador de estado (Salvo / Salvando… / Não salvo / Erro).
-- **Offline**: escreve sem internet e sincroniza quando a conexão volta.
-- **PWA**: instalável no celular e no desktop.
+/* =========================================================
+   EDITOR (sidebar de capítulos + área de escrita)
+   ========================================================= */
+.sidebar {
+  width: 268px;
+  flex-shrink: 0;
+  border-right: 1px solid var(--line);
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  position: sticky; top: 0;
+  padding: 16px 14px;
+  overflow-y: auto;
+}
+.sidebar .back-btn { align-self: flex-start; margin-bottom: 14px; }
+.book-head {
+  display: flex; align-items: flex-start; gap: 4px;
+  padding: 0 6px 14px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 12px;
+}
+#book-title {
+  font-family: var(--font-serif);
+  font-size: 1.3rem;
+  font-weight: 500;
+  line-height: 1.25;
+  color: var(--ink);
+  flex: 1;
+  word-break: break-word;
+}
+.book-head .btn-icon { flex-shrink: 0; }
 
----
+.chapters-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 2px 6px 8px;
+}
+.chapters-head span {
+  font-size: .74rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.chapters { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.chapter-item {
+  display: flex; align-items: center; gap: 4px;
+  padding: 9px 8px 9px 10px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  color: var(--ink-soft);
+  transition: background .12s ease, color .12s ease;
+}
+.chapter-item:hover { background: var(--surface-2); color: var(--ink); }
+.chapter-item.active { background: var(--accent-soft); color: var(--accent-ink); }
+.chapter-item .ch-title {
+  flex: 1;
+  font-size: .92rem;
+  font-weight: 500;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.chapter-item .ch-actions { display: flex; gap: 0; opacity: 0; pointer-events: none; transition: opacity .12s ease; }
+.chapter-item:hover .ch-actions, .chapter-item.active .ch-actions { opacity: 1; pointer-events: auto; }
+.chapter-item .btn-icon { width: 26px; height: 26px; }
+.chapter-item .btn-icon svg { width: 15px; height: 15px; }
 
-## Como colocar no ar (passo a passo)
+.sidebar-empty { padding: 16px 8px; color: var(--ink-faint); font-size: .86rem; line-height: 1.5; }
 
-1. **Crie um projeto no Supabase.**
-2. No **SQL Editor**, cole e rode o `supabase_setup.sql`. Isso cria as tabelas `books` e `chapters`, os gatilhos de `updated_at` e as 8 políticas de RLS.
-3. Em **Authentication → Users**, crie o seu usuário (e-mail + senha).
-   - *Dica:* em **Authentication → Providers → Email**, desligue **"Confirm email"** para logar na hora sem precisar confirmar.
-4. **Desligue o cadastro público** (importante — veja [Segurança](#segurança)): em **Authentication → Providers → Email** (ou **Settings**), desative **"Enable signups" / "Allow new users to sign up"**. Como é um app de um usuário só, ninguém mais deve conseguir criar conta no seu projeto.
-5. Em **Authentication → URL Configuration**, defina o **Site URL** (sua URL da Vercel) e remova `localhost` dos Redirect URLs em produção.
-6. Em **Project Settings → API**, copie a **Project URL** e a chave **anon public**.
-7. Cole as duas no topo do `app.js` (campos `SUPABASE_URL` e `SUPABASE_ANON_KEY`).
-8. No `vercel.json`, troque `SEU-PROJETO.supabase.co` pela sua origem real — **em 2 lugares**, dentro do `connect-src`.
-9. Suba os arquivos do app para a **raiz do repo** no GitHub e conecte o repo à **Vercel**.
+/* área de escrita */
+.editor {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  height: 100vh;
+}
+.editor-top {
+  border-bottom: 1px solid var(--line);
+}
+/* conteúdo do topo alinhado à mesma coluna do texto (título sobre o corpo) */
+.editor-top-inner {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  max-width: var(--measure);
+  margin: 0 auto;
+  padding: 16px 24px;
+}
+.chapter-title {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--font-serif);
+  font-size: 1.5rem;
+  font-weight: 500;
+  padding: 4px 0;
+  min-width: 0;
+}
+.chapter-title::placeholder { color: var(--ink-faint); }
+.chapter-title:focus { outline: none; }
+.editor-actions { display: flex; align-items: center; gap: 16px; flex-shrink: 0; }
 
-> Se algo der errado no login após o deploy, o suspeito nº 1 é o CSP: a origem do Supabase precisa estar certa no `connect-src` do `vercel.json` (passo 8).
+/* indicador de salvamento */
+.save-status {
+  display: inline-flex; align-items: center; gap: 7px;
+  font-size: .82rem; color: var(--ink-faint);
+  white-space: nowrap;
+}
+.save-status .dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--ink-faint);
+  flex-shrink: 0;
+}
+.save-status[data-state="saved"]   { color: var(--ok); }
+.save-status[data-state="saved"] .dot   { background: var(--ok); }
+.save-status[data-state="dirty"]   { color: var(--ink-soft); }
+.save-status[data-state="dirty"] .dot   { background: var(--accent); }
+.save-status[data-state="saving"]  { color: var(--accent-ink); }
+.save-status[data-state="saving"] .dot  { background: var(--accent); animation: pulse 1s ease-in-out infinite; }
+.save-status[data-state="error"]   { color: var(--danger); }
+.save-status[data-state="error"] .dot   { background: var(--danger); }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .3; } }
 
----
+.editor-body { flex: 1; overflow-y: auto; display: flex; justify-content: center; scrollbar-gutter: stable both-edges; }
+.editor-area {
+  width: 100%;
+  max-width: var(--measure);
+  border: none;
+  background: transparent;
+  resize: none;
+  outline: none;
+  color: var(--ink);
+  font-family: var(--font-serif);
+  font-size: 1.18rem;
+  line-height: 1.85;
+  padding: 44px 24px 160px;
+}
+.editor-area::placeholder { color: var(--ink-faint); }
 
-## As duas edições manuais
+.editor-placeholder {
+  flex: 1;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  text-align: center; padding: 40px;
+  color: var(--ink-soft);
+}
+.editor-placeholder .empty-mark { font-family: var(--font-serif); font-size: 2.6rem; color: var(--line-strong); }
+.editor-placeholder p { margin: 12px 0 18px; font-size: .98rem; }
 
-Só existem dois lugares que você edita à mão:
+/* barra de scroll discreta */
+.sidebar::-webkit-scrollbar, .editor-body::-webkit-scrollbar { width: 10px; }
+.sidebar::-webkit-scrollbar-thumb, .editor-body::-webkit-scrollbar-thumb {
+  background: var(--line-strong); border-radius: 10px; border: 3px solid var(--surface);
+}
+.editor-body::-webkit-scrollbar-thumb { border-color: var(--paper); }
 
-1. **`app.js`** — as credenciais do Supabase (`SUPABASE_URL` e `SUPABASE_ANON_KEY`). Se esquecer, o app mostra uma tela avisando o que falta.
-2. **`vercel.json`** — a origem do Supabase no `connect-src` (os 2 `SEU-PROJETO.supabase.co`).
+/* =========================================================
+   MODAL (criar/editar) e CONFIRMAÇÃO
+   ========================================================= */
+.modal-backdrop {
+  position: fixed; inset: 0; z-index: 100;
+  background: rgba(34,31,26,.34);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+  animation: fade .12s ease;
+}
+@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+.modal {
+  width: 100%; max-width: 420px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-md);
+  padding: 26px 24px 22px;
+  animation: rise .14s ease;
+}
+@keyframes rise { from { transform: translateY(8px); opacity: .6; } to { transform: translateY(0); opacity: 1; } }
+.modal h3 {
+  font-family: var(--font-serif);
+  font-size: 1.35rem; font-weight: 500;
+  margin-bottom: 18px;
+}
+.modal .modal-msg { color: var(--ink-soft); font-size: .95rem; line-height: 1.5; margin-bottom: 22px; }
+.modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px; }
+.btn-danger {
+  border: 1px solid var(--danger); background: var(--danger); color: #fdf3f1;
+  padding: 10px 18px; border-radius: var(--radius-sm); font-size: .92rem; font-weight: 600;
+  transition: background .15s ease;
+}
+.btn-danger:hover { background: #8e3023; }
 
----
+/* =========================================================
+   TOAST (avisos rápidos, ex: erro de salvamento)
+   ========================================================= */
+#toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px);
+  z-index: 200;
+  background: var(--ink); color: #f6f2e9;
+  padding: 12px 18px; border-radius: var(--radius-sm);
+  font-size: .9rem; box-shadow: var(--shadow-md);
+  opacity: 0; pointer-events: none;
+  transition: opacity .2s ease, transform .2s ease;
+  max-width: 90vw;
+}
+#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+#toast.error { background: #7a2a20; }
 
-## Autosave
+/* pílula de status de conexão / sincronização (canto inferior esquerdo) */
+#net-status {
+  position: fixed; bottom: 18px; left: 18px; z-index: 150;
+  padding: 7px 13px; border-radius: 999px;
+  font-size: .82rem; font-weight: 500;
+  box-shadow: var(--shadow-md);
+  display: inline-flex; align-items: center; gap: 8px;
+  max-width: calc(100vw - 36px);
+}
+#net-status::before {
+  content: ""; width: 8px; height: 8px; border-radius: 50%; flex: none;
+}
+#net-status[data-kind="offline"] { background: #f3e3c8; color: #6b4d12; border: 1px solid #e3cfa3; }
+#net-status[data-kind="offline"]::before { background: #c98a13; }
+#net-status[data-kind="syncing"] { background: #e7ede6; color: #2f5132; border: 1px solid #cfe0cf; }
+#net-status[data-kind="syncing"]::before { background: #3f8a45; animation: ms-pulse 1s ease-in-out infinite; }
+@keyframes ms-pulse { 0%,100% { opacity: 1; } 50% { opacity: .3; } }
+@media (max-width: 760px) { #net-status { bottom: 12px; left: 12px; } }
 
-Pensado para **nunca perder uma palavra**:
+/* banner do modo demonstração (usado só no preview) */
+.demo-banner {
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  text-align: center;
+  font-size: .82rem;
+  font-weight: 600;
+  padding: 7px 16px;
+  border-bottom: 1px solid var(--line-strong);
+}
 
-- **Debounce**: salva 1,5s depois que você para de digitar (no corpo e no título).
-- **Rede de segurança local**: a cada tecla, o texto é espelhado no `localStorage` (operação síncrona e instantânea). Se a rede cair, o navegador fechar ou faltar luz, o rascunho sobrevive e é **recuperado automaticamente** ao reabrir o capítulo.
-- **Save coalescente**: se você digita enquanto um salvamento está em andamento, ele guarda e salva de novo a versão mais recente ao terminar — sem o "Salvo" mentindo com texto por gravar.
-- **Retry automático**: se um salvamento falha, ele tenta sozinho com backoff (3s, 6s, 12s… até 30s) até a conexão voltar.
-- **Flush ao navegar/sair**: trocar de capítulo, voltar para a biblioteca, sair ou minimizar a aba (`visibilitychange`) força o salvamento do que estiver pendente. Há também aviso do navegador (`beforeunload`) se houver algo não salvo.
-
----
-
-## Offline e PWA
-
-O app funciona offline em **três camadas**:
-
-1. **Abre offline** — o Service Worker pré-cacheia o "casco" (HTML/CSS/JS) e cacheia fontes e a lib em tempo de execução. Navegação cai para o `index.html` em cache quando não há rede.
-2. **Dados disponíveis offline** — um **espelho local** (no `localStorage`) guarda todos os livros e capítulos, atualizado a cada sincronização.
-3. **Escrever offline e sincronizar depois** — toda escrita é aplicada no espelho local na hora (otimista) e entra numa **fila**. Quando a conexão volta, a fila é drenada para o Supabase, em ordem. Os **IDs são gerados no cliente** (UUID), então um capítulo criado offline já nasce com o ID final — sem reconciliação. Como é um usuário só, conflito é resolvido por **"última escrita vence"**.
-
-Uma **pílula no canto** mostra o estado: `Offline · N aguardando` ou `Sincronizando…`.
-
-### Como testar o offline (no app publicado, não no preview)
-
-1. Abra o app **uma vez online** (é quando o casco é cacheado e os dados baixam para o espelho).
-2. DevTools → aba **Network** → **Offline** (ou modo avião no celular).
-3. Recarregue: o app abre, você escreve, e a pílula mostra `Offline · N aguardando`.
-4. Volte para online: ele sincroniza e a pílula some.
-
-### ⚠️ Dois pontos operacionais
-
-1. **O primeiro acesso precisa ser online.** É nele que o casco é cacheado e os dados baixam. Depois disso, offline funciona.
-2. **A cada deploy com mudança, suba a versão do cache.** No `service-worker.js`, troque `"manuscrito-v1"` por `v2`, `v3`, e assim por diante. Isso força o Service Worker a reinstalar e descartar o cache antigo — **sem isso, o usuário fica preso na versão anterior.**
-
----
-
-## Segurança
-
-Resumo da revisão feita (com olhos de atacante). A base é sólida; o que importava foi endurecido.
-
-**Já corrigido no código:**
-- **RLS é a fronteira de segurança.** A chave `anon` fica no front (correto — ela é pública por design), então **toda** a proteção dos dados está nas políticas de RLS. Elas cobrem as 4 operações (select/insert/update/delete) nas duas tabelas, e o `user_id` é preenchido pelo banco (`default auth.uid()`), nunca pelo cliente.
-- **Capítulo só entra em livro seu.** As políticas de `insert`/`update` de capítulo verificam, via `EXISTS`, que o `book_id` pertence ao usuário (bloqueia "pendurar" capítulo no livro de outra pessoa).
-- **Funções com `search_path` fixo** (`security invoker` + `set search_path = ''`) — boa prática e some o alerta do Security Advisor.
-- **Cabeçalhos de segurança + CSP** no `vercel.json`: anti-clickjacking (`X-Frame-Options: DENY`), `nosniff`, HSTS, Referrer-Policy e um CSP que **permite o Supabase, as fontes e a lib** (e libera o Service Worker a cacheá-los).
-- **Sem `service_role` no front**, sem injeção de SQL (o supabase-js parametriza tudo), sem XSS (todo dado de usuário vai via `textContent`/`.value`, e os modais passam por escape).
-
-**Você faz no painel do Supabase (não dá para pôr em código):**
-- **Desligar o cadastro público** (passo 4 do deploy). Sem isso, qualquer pessoa com a chave `anon` cria conta no seu projeto e consome sua cota.
-- **Definir Site URL / allowlist de redirect** (passo 5).
-
-**Pendência opcional (cadeia de suprimentos):** o supabase-js vem do `cdn.jsdelivr.net` sem versão fixa nem SRI. Ver [Próximo passo opcional](#próximo-passo-opcional).
-
----
-
-## Banco de dados
-
-Duas tabelas, com RLS ligada e o usuário só enxergando o que é dele.
-
-**`books`**: `id` (uuid, PK), `user_id` (default `auth.uid()`), `title`, `description`, `created_at`, `updated_at`.
-
-**`chapters`**: `id` (uuid, PK), `user_id` (default `auth.uid()`), `book_id` (FK → books, `on delete cascade`), `title`, `content`, `order_index`, `created_at`, `updated_at`.
-
-**Gatilhos:** `set_updated_at` mantém `updated_at` nas duas tabelas; `touch_book_updated_at` atualiza o `updated_at` do livro quando um capítulo muda (a biblioteca ordena por escrita mais recente).
-
-**RLS:** 8 políticas (select/insert/update/delete por tabela). As de capítulo também exigem que o `book_id` seja de um livro do próprio usuário.
-
-> O `supabase_setup.sql` é idempotente — roda de novo sem quebrar.
-
----
-
-## Decisões tomadas
-
-- **Nome:** "Manuscrito" (fácil de renomear).
-- **Visual:** tema único claro "papel quente" — acento terracota (`#9c4a2f`), serifa **Newsreader** para títulos e corpo, **Hanken Grotesk** para a interface. Sem modo escuro (para manter simples).
-- **Arquitetura:** toda conversa com o Supabase isolada numa camada `db` — o resto do app não sabe que é Supabase. Isso também torna o preview trivial.
-- **Storage offline:** **`localStorage`** em vez de IndexedDB (mais simples, e o texto de um livro cabe folgado). Dá para migrar a mesma lógica para IndexedDB se os dados crescerem muito.
-- **Logout não apaga o espelho local** — para nunca perder algo ainda não sincronizado.
-- **Recuperação de rascunho é automática** (restaura e sincroniza sem perguntar). Dá para trocar por um "Recuperar / Descartar" se você preferir.
-
----
-
-## Fora do escopo (por enquanto)
-
-Decididos como **não agora**: IA, templates, colaboração/comentários, marketplace, assinatura, painel complexo, multiusuário avançado, editor rich-text, reordenação de capítulos por arrastar.
-
----
-
-## Próximo passo opcional
-
-**Auto-hospedar o supabase-js** no repo (em vez de carregar do jsdelivr). Isso:
-- torna o cache offline 100% confiável (a lib passa a ser do mesmo domínio);
-- fecha o item de cadeia de suprimentos da revisão de segurança (sem dependência de CDN externo, sem versão flutuante).
-
-É a única coisa pendente para deixar o projeto "redondo".
+/* =========================================================
+   RESPONSIVO (desktop-first, com fallback simples)
+   ========================================================= */
+@media (max-width: 760px) {
+  #view-editor.active { flex-direction: column; }
+  .sidebar {
+    width: 100%; height: auto; position: static;
+    border-right: none; border-bottom: 1px solid var(--line);
+    max-height: 42vh;
+  }
+  .editor { height: auto; }
+  .editor-body { min-height: 58vh; scrollbar-gutter: auto; }
+  .editor-top-inner { padding: 12px 18px; max-width: 100%; }
+  .editor-area { padding: 28px 18px 120px; font-size: 1.1rem; }
+  .library { padding: 28px 18px 60px; }
+}
