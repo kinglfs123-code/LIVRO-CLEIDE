@@ -95,9 +95,26 @@
         <button class="btn-primary" id="empty-new-book-btn">Criar primeiro livro</button>
       </div>
     </main>
-  </section>
 
-  <!-- ============================ TELA: EDITOR ============================ -->
+    <!-- navegação inferior (só na biblioteca) -->
+    <nav class="navbar" id="navbar">
+      <button class="nav-item active" id="nav-biblioteca" data-label="Biblioteca" title="Biblioteca">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 4l9 6.5"/><path d="M5 9.5V20h14V9.5"/><path d="M10 20v-5h4v5"/></svg>
+      </button>
+      <button class="nav-item" id="nav-escrever" data-label="Escrever" title="Escrever">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19.5 3 20.5 4 16.5z"/></svg>
+      </button>
+      <div class="nav-sep"></div>
+      <div class="nav-conta-wrap">
+        <div class="nav-menu" id="nav-menu" hidden>
+          <button class="nav-menu-item" id="nav-logout">Sair</button>
+        </div>
+        <button class="nav-item" id="nav-conta" data-label="Conta" title="Conta">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>
+        </button>
+      </div>
+    </nav>
+  </section>
   <section id="view-editor" class="view">
     <!-- Sidebar: capítulos -->
     <aside class="sidebar">
@@ -134,8 +151,46 @@
       </div>
 
       <div class="editor-body" id="editor-body" hidden>
-        <textarea class="editor-area" id="editor-area"
-          placeholder="Comece a escrever…" spellcheck="true"></textarea>
+        <div class="editor-area" id="editor-area"
+             contenteditable="true" spellcheck="true" lang="pt-BR"
+             data-placeholder="Comece a escrever…"></div>
+      </div>
+
+      <!-- barra inferior de formatação (aparece junto com o editor) -->
+      <div class="format-bar" id="format-bar" hidden>
+        <div class="fb-group">
+          <select class="fb-select fb-font" id="fb-font" title="Fonte">
+            <option value='"Newsreader", Georgia, serif'>Newsreader</option>
+            <option value="Lora, Georgia, serif">Lora</option>
+            <option value="Georgia, serif">Georgia</option>
+            <option value="'Times New Roman', serif">Times New Roman</option>
+            <option value='"Hanken Grotesk", sans-serif'>Hanken Grotesk</option>
+            <option value="Arial, sans-serif">Arial</option>
+            <option value="'Courier New', monospace">Courier New</option>
+          </select>
+          <select class="fb-select fb-size" id="fb-size" title="Tamanho">
+            <option>14</option><option>16</option><option selected>18</option>
+            <option>20</option><option>24</option><option>28</option><option>32</option>
+          </select>
+        </div>
+        <div class="fb-sep"></div>
+        <div class="fb-group">
+          <button class="fb-btn" data-cmd="bold" title="Negrito (Ctrl+B)"><b>N</b></button>
+          <button class="fb-btn" data-cmd="italic" title="Itálico (Ctrl+I)"><i>I</i></button>
+          <button class="fb-btn" data-cmd="underline" title="Sublinhado (Ctrl+U)"><u>S</u></button>
+        </div>
+        <div class="fb-sep"></div>
+        <div class="fb-group">
+          <button class="fb-btn" data-cmd="justifyLeft" title="Alinhar à esquerda">⯇</button>
+          <button class="fb-btn" data-cmd="justifyCenter" title="Centralizar">≡</button>
+          <button class="fb-btn" data-cmd="justifyRight" title="Alinhar à direita">⯈</button>
+          <button class="fb-btn" data-cmd="justifyFull" title="Justificar">☰</button>
+        </div>
+        <div class="fb-sep"></div>
+        <div class="fb-group">
+          <button class="fb-btn" data-cmd="insertUnorderedList" title="Lista com marcadores">•</button>
+          <button class="fb-btn" data-cmd="insertOrderedList" title="Lista numerada">1.</button>
+        </div>
       </div>
 
       <div class="editor-placeholder" id="editor-placeholder">
