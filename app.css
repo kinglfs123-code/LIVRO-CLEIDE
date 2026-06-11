@@ -31,6 +31,7 @@
   --font-sans:  "Hanken Grotesk", system-ui, -apple-system, "Segoe UI", sans-serif;
 
   --measure: 64ch;   /* largura confortável de leitura no editor */
+  --page-max: 980px; /* largura da coluna central (topbar + biblioteca) */
 }
 
 /* ---------- Reset enxuto ---------- */
@@ -169,18 +170,69 @@ textarea.input { resize: vertical; min-height: 84px; line-height: 1.5; }
 .auth-toggle a { color: var(--accent); font-weight: 600; cursor: pointer; text-decoration: none; }
 .auth-toggle a:hover { text-decoration: underline; }
 
+/* ---------- estado de sucesso do cadastro (animado) ---------- */
+.auth-success { text-align: center; }
+.check-wrap { width: 84px; height: 84px; margin: 4px auto 22px; }
+.check-circle-bg {
+  fill: var(--accent-soft); transform-origin: center;
+  animation: check-pop .45s cubic-bezier(.2,.8,.3,1.2) both;
+}
+.check-ring {
+  fill: none; stroke: var(--accent); stroke-width: 3.5;
+  stroke-dasharray: 170; stroke-dashoffset: 170;
+  animation: check-draw .55s ease .15s forwards;
+}
+.check-tick {
+  fill: none; stroke: var(--accent); stroke-width: 5; stroke-linecap: round; stroke-linejoin: round;
+  stroke-dasharray: 48; stroke-dashoffset: 48;
+  animation: check-draw .35s ease .55s forwards;
+}
+@keyframes check-pop { 0% { transform: scale(.4); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+@keyframes check-draw { to { stroke-dashoffset: 0; } }
+
+.auth-success-title {
+  font-family: var(--font-serif); font-size: 1.6rem; font-weight: 500; margin: 0 0 10px;
+  animation: auth-rise .5s ease .5s both;
+}
+.auth-success-sub {
+  color: var(--ink-soft); font-size: .96rem; line-height: 1.55; margin: 0 0 6px;
+  animation: auth-rise .5s ease .62s both;
+}
+.auth-success-sub b { color: var(--ink); }
+.auth-success-hint {
+  color: var(--ink-faint); font-size: .83rem; margin: 14px 0 22px;
+  animation: auth-rise .5s ease .74s both;
+}
+.auth-success-back { animation: auth-rise .5s ease .86s both; }
+.auth-success-back a { color: var(--accent); font-weight: 600; cursor: pointer; text-decoration: none; font-size: .92rem; }
+.auth-success-back a:hover { text-decoration: underline; }
+@keyframes auth-rise { 0% { opacity: 0; transform: translateY(8px); } 100% { opacity: 1; transform: translateY(0); } }
+
+/* respeita quem prefere menos movimento */
+@media (prefers-reduced-motion: reduce) {
+  .check-circle-bg, .check-ring, .check-tick,
+  .auth-success-title, .auth-success-sub, .auth-success-hint, .auth-success-back {
+    animation: none !important;
+  }
+  .check-ring, .check-tick { stroke-dashoffset: 0; }
+}
+
 /* =========================================================
    TOPO (biblioteca)
    ========================================================= */
 .topbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px 26px;
   border-bottom: 1px solid var(--line);
   background: rgba(251,248,241,.7);
   backdrop-filter: blur(6px);
   position: sticky; top: 0; z-index: 10;
+}
+.topbar-inner {
+  max-width: var(--page-max);
+  margin: 0 auto;
+  padding: 16px 26px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 .brand-sm {
   font-family: var(--font-serif);
@@ -194,9 +246,9 @@ textarea.input { resize: vertical; min-height: 84px; line-height: 1.5; }
    BIBLIOTECA
    ========================================================= */
 .library {
-  max-width: 980px;
+  max-width: var(--page-max);
   margin: 0 auto;
-  padding: 40px 26px 80px;
+  padding: 48px 26px 64px;
 }
 .library-head {
   display: flex;
