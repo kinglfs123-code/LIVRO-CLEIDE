@@ -677,7 +677,7 @@ async function selectChapter(ch) {
     ((draft.content || "") !== (ch.content || "") || (draft.title || "") !== (ch.title || ""));
 
   $("#chapter-title").value = draftIsNewer ? (draft.title || "")   : (ch.title || "");
-  $("#editor-area").value   = draftIsNewer ? (draft.content || "") : (ch.content || "");
+  setEditorContent(draftIsNewer ? (draft.content || "") : (ch.content || ""));
   showEditorActive();
 
   if (draftIsNewer) {
@@ -691,20 +691,106 @@ async function selectChapter(ch) {
   }
 
   // foca no fim do texto
-  const area = $("#editor-area");
-  area.focus();
-  area.setSelectionRange(area.value.length, area.value.length);
+  placeCaretEnd($("#editor-area"));
+}
+
+/* ---- editor rich-text: helpers (isolam o contenteditable do resto do app) ---- */
+function getEditorContent() { return $("#editor-area").innerHTML; }
+function setEditorContent(html) { $("#editor-area").innerHTML = html || ""; }
+function placeCaretEnd(el) {
+  el.focus();
+  try {
+    const r = document.createRange(); r.selectNodeContents(el); r.collapse(false);
+    const s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+  } catch (_) {}
 }
 
 function showEditorActive() {
   $("#editor-placeholder").hidden = true;
   $("#editor-top").hidden = false;
   $("#editor-body").hidden = false;
+  $("#format-bar").hidden = false;
 }
 function showEditorEmpty() {
   $("#editor-placeholder").hidden = false;
   $("#editor-top").hidden = true;
   $("#editor-body").hidden = true;
+  $("#format-bar").hidden = true;
+}
+
+/* ---- barra de formatação (rich-text via execCommand) ---- */
+function initFormatBar() {
+  try { document.execCommand("styleWithCSS", false, true); } catch (_) {}
+  const editor = $("#editor-area");
+
+  document.querySelectorAll(".fb-btn[data-cmd]").forEach((btn) => {
+    btn.addEventListener("mousedown", (e) => e.preventDefault()); // mantém a seleção
+    btn.addEventListener("click", () => {
+      editor.focus();
+      document.execCommand(btn.dataset.cmd, false, null);
+      onEditorInput(); // conta como alteração -> autosave
+      syncFormatBar();
+    });
+  });
+
+  $("#fb-font").addEventListener("change", (e) => applyStyleToSelection("fontFamily", e.target.value));
+  $("#fb-size").addEventListener("change", (e) => applyStyleToSelection("fontSize", e.target.value + "px"));
+
+  document.addEventListener("selectionchange", () => {
+    if (document.activeElement === editor) syncFormatBar();
+  });
+}
+// aplica fonte/tamanho à seleção (envolve num span com estilo inline)
+function applyStyleToSelection(prop, value) {
+  const editor = $("#editor-area");
+  editor.focus();
+  const sel = window.getSelection();
+  if (!sel.rangeCount || sel.isCollapsed) return;
+  const range = sel.getRangeAt(0);
+  const span = document.createElement("span");
+  span.style[prop] = value;
+  try { range.surroundContents(span); }
+  catch (_) { const frag = range.extractContents(); span.appendChild(frag); range.insertNode(span); }
+  sel.removeAllRanges();
+  onEditorInput();
+}
+// destaca N/I/S e alinhamento conforme a posição do cursor
+function syncFormatBar() {
+  ["bold","italic","underline","justifyLeft","justifyCenter","justifyRight","justifyFull"].forEach((cmd) => {
+    const b = document.querySelector('.fb-btn[data-cmd="' + cmd + '"]');
+    if (!b) return;
+    let on = false; try { on = document.queryCommandState(cmd); } catch (_) {}
+    b.classList.toggle("active", on);
+  });
+}
+
+/* ---- navegação inferior (só na biblioteca) ---- */
+function initBottomNav() {
+  $("#nav-biblioteca").addEventListener("click", () => {
+    closeNavMenu(); window.scrollTo({ top: 0, behavior: "smooth" });
+  });
+  // "Escrever": abre o livro mais recente, ou cria o primeiro se não houver
+  $("#nav-escrever").addEventListener("click", () => {
+    closeNavMenu();
+    if (state.books && state.books.length) openBook(state.books[0]);
+    else onNewBook();
+  });
+  // "Conta": abre/fecha o menuzinho
+  $("#nav-conta").addEventListener("click", (e) => {
+    e.stopPropagation();
+    const m = $("#nav-menu");
+    m.hidden = !m.hidden;
+    $("#nav-conta").classList.toggle("active", !m.hidden);
+  });
+  $("#nav-logout").addEventListener("click", () => { closeNavMenu(); handleLogout(); });
+  // clicar fora fecha o menu
+  document.addEventListener("click", (e) => {
+    if (!$("#navbar").contains(e.target)) closeNavMenu();
+  });
+}
+function closeNavMenu() {
+  const m = $("#nav-menu"); if (m) m.hidden = true;
+  const c = $("#nav-conta"); if (c) c.classList.remove("active");
 }
 
 async function onNewChapter() {
@@ -785,7 +871,7 @@ function onEditorInput() {
   // espelho local instantâneo (síncrono): nada se perde mesmo se fechar agora
   saveDraft(state.currentChapter.id, {
     title: $("#chapter-title").value,
-    content: $("#editor-area").value,
+    content: getEditorContent(),
   });
   clearTimeout(state.autosaveTimer);
   state.autosaveTimer = setTimeout(saveCurrentChapter, AUTOSAVE_MS);
@@ -804,7 +890,7 @@ async function saveCurrentChapter() {
   setStatus("saving");
 
   const id = state.currentChapter.id;
-  const fields = { title: $("#chapter-title").value.trim() || "Sem título", content: $("#editor-area").value };
+  const fields = { title: $("#chapter-title").value.trim() || "Sem título", content: getEditorContent() };
 
   let result;
   try {
@@ -886,12 +972,18 @@ function wireEvents() {
   // biblioteca
   $("#empty-new-book-btn").addEventListener("click", onNewBook);
 
+  // navegação inferior (biblioteca)
+  initBottomNav();
+
   // editor
   $("#back-btn").addEventListener("click", backToLibrary);
   $("#book-rename").addEventListener("click", () => { if (state.currentBook) onEditBook(state.currentBook); });
   $("#new-chapter-btn").addEventListener("click", onNewChapter);
   $("#placeholder-new-chapter-btn").addEventListener("click", onNewChapter);
   $("#save-btn").addEventListener("click", () => { state.dirty = true; saveCurrentChapter(); });
+
+  // barra de formatação do editor
+  initFormatBar();
 
   // autosave: digitação no corpo e no título do capítulo
   $("#editor-area").addEventListener("input", onEditorInput);
