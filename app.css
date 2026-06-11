@@ -39,6 +39,7 @@
 
 /* ---------- Reset enxuto ---------- */
 *, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; } /* hidden vence flex/grid (evita placeholder e editor juntos) */
 html, body { height: 100%; }
 body {
   margin: 0;
@@ -479,10 +480,10 @@ textarea.input { resize: vertical; min-height: 84px; line-height: 1.5; }
   font-family: var(--font-serif);
   font-size: 1.18rem;
   line-height: 1.85;
-  padding: 44px 24px 160px;
+  padding: 44px 24px 110px;   /* espaço embaixo p/ o pill flutuante não cobrir o texto */
   white-space: pre-wrap;      /* preserva quebras de linha (inclusive de capítulos antigos em texto puro) */
   overflow-wrap: break-word;
-  min-height: 50vh;
+  min-height: 100%;           /* ocupa toda a altura visível, não só metade */
 }
 /* placeholder do editor editável (contenteditable não tem placeholder nativo) */
 .editor-area:empty::before {
@@ -499,9 +500,9 @@ textarea.input { resize: vertical; min-height: 84px; line-height: 1.5; }
   align-items: center; justify-content: center;
   text-align: center; padding: 40px;
   color: var(--ink-soft);
+  gap: 22px;
 }
-.editor-placeholder .empty-mark { font-family: var(--font-serif); font-size: 2.6rem; color: var(--line-strong); }
-.editor-placeholder p { margin: 12px 0 18px; font-size: .98rem; }
+.editor-placeholder .empty-mark { font-family: var(--font-serif); font-size: 3rem; color: var(--line-strong); }
 
 /* ---------- barra de formatação: pill flutuante (só no editor) ---------- */
 .format-bar {
