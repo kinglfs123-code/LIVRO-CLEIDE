@@ -21,6 +21,9 @@
   --accent-soft: #f0e2d8;   /* fundo tom-sobre-tom do accent */
   --danger:      #a4392b;
   --ok:          #46703f;   /* verde discreto do "Salvo" */
+  --rail:        #262019;   /* marrom quase-preto quente (pill da navegação) */
+  --rail-2:      #322a21;   /* hover dentro do pill */
+  --rail-ink:    #e9e1d2;   /* ícones creme da navegação */
 
   --radius:    11px;
   --radius-sm: 7px;
@@ -470,15 +473,24 @@ textarea.input { resize: vertical; min-height: 84px; line-height: 1.5; }
   max-width: var(--measure);
   border: none;
   background: transparent;
-  resize: none;
   outline: none;
   color: var(--ink);
   font-family: var(--font-serif);
   font-size: 1.18rem;
   line-height: 1.85;
   padding: 44px 24px 160px;
+  white-space: pre-wrap;      /* preserva quebras de linha (inclusive de capítulos antigos em texto puro) */
+  overflow-wrap: break-word;
+  min-height: 50vh;
 }
-.editor-area::placeholder { color: var(--ink-faint); }
+/* placeholder do editor editável (contenteditable não tem placeholder nativo) */
+.editor-area:empty::before {
+  content: attr(data-placeholder);
+  color: var(--ink-faint);
+  pointer-events: none;
+}
+.editor-area p { margin: 0 0 1em; }
+.editor-area ul, .editor-area ol { margin: 0 0 1em; padding-left: 1.4em; }
 
 .editor-placeholder {
   flex: 1;
@@ -489,6 +501,71 @@ textarea.input { resize: vertical; min-height: 84px; line-height: 1.5; }
 }
 .editor-placeholder .empty-mark { font-family: var(--font-serif); font-size: 2.6rem; color: var(--line-strong); }
 .editor-placeholder p { margin: 12px 0 18px; font-size: .98rem; }
+
+/* ---------- barra inferior de formatação ---------- */
+.format-bar {
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  padding: 8px 14px; border-top: 1px solid var(--line); background: var(--surface-2);
+}
+.fb-group { display: flex; align-items: center; gap: 4px; }
+.fb-sep { width: 1px; height: 22px; background: var(--line-strong); margin: 0 6px; }
+.fb-btn {
+  min-width: 32px; height: 32px; padding: 0 8px; border: 1px solid transparent; background: transparent;
+  border-radius: var(--radius-sm); color: var(--ink-soft); font-size: .95rem; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; font-family: var(--font-sans);
+}
+.fb-btn:hover { background: var(--surface); color: var(--ink); }
+.fb-btn.active { background: var(--accent); color: #fdf6ee; border-color: var(--accent); }
+.fb-btn b { font-weight: 700; } .fb-btn i { font-style: italic; } .fb-btn u { text-decoration: underline; }
+.fb-select {
+  height: 32px; border: 1px solid var(--line-strong); background: var(--surface);
+  border-radius: var(--radius-sm); color: var(--ink); font-family: var(--font-sans);
+  font-size: .86rem; padding: 0 8px; cursor: pointer;
+}
+.fb-font { min-width: 150px; } .fb-size { width: 64px; }
+@media (max-width: 760px) {
+  .format-bar { gap: 4px; padding: 8px; }
+  .fb-font { min-width: 110px; }
+  .fb-sep { margin: 0 3px; }
+}
+
+/* ---------- navegação inferior (pill flutuante, só na biblioteca) ---------- */
+.navbar {
+  position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%);
+  display: flex; align-items: center; gap: 6px;
+  padding: 10px 12px; border-radius: 30px;
+  background: var(--rail);
+  box-shadow: 0 12px 38px rgba(40,33,20,.32), inset 0 1px 0 rgba(255,255,255,.05);
+  z-index: 50;
+}
+.nav-item {
+  position: relative; width: 48px; height: 48px; border: none; background: transparent;
+  border-radius: 50%; color: var(--rail-ink); cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .15s ease, color .15s ease;
+}
+.nav-item svg { width: 23px; height: 23px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.nav-item:hover { background: var(--rail-2); }
+.nav-item.active { background: var(--accent); color: #fdf6ee; }
+.nav-sep { width: 1px; height: 24px; background: rgba(233,225,210,.14); margin: 0 4px; }
+.nav-item::after {
+  content: attr(data-label); position: absolute; bottom: 58px; left: 50%; transform: translateX(-50%);
+  background: var(--ink); color: #fdf6ee; font-size: .78rem; padding: 5px 10px; border-radius: 7px;
+  white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity .12s ease;
+  box-shadow: 0 6px 18px rgba(40,33,20,.25);
+}
+.nav-item:hover::after { opacity: 1; }
+.nav-conta-wrap { position: relative; display: flex; }
+.nav-menu {
+  position: absolute; bottom: 60px; right: 0;
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-md); padding: 6px; min-width: 140px;
+}
+.nav-menu-item {
+  width: 100%; text-align: left; border: none; background: transparent; cursor: pointer;
+  padding: 9px 12px; border-radius: 6px; color: var(--ink); font-family: var(--font-sans); font-size: .9rem;
+}
+.nav-menu-item:hover { background: var(--surface-2); }
 
 /* barra de scroll discreta */
 .sidebar::-webkit-scrollbar, .editor-body::-webkit-scrollbar { width: 10px; }
