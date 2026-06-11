@@ -606,10 +606,9 @@ textarea.input { resize: vertical; min-height: 84px; line-height: 1.5; }
     <main class="library">
       <div class="library-head">
         <div>
-          <h1>Sua biblioteca</h1>
-          <p id="library-greeting"></p>
+          <h1 id="library-title">Olá!</h1>
+          <p id="library-greeting">Sua biblioteca está te esperando.</p>
         </div>
-        <button class="btn-primary" id="new-book-btn">Novo livro</button>
       </div>
 
       <div class="books-grid" id="books-grid"><!-- cartões injetados via JS --></div>
@@ -709,6 +708,9 @@ const state = {
 const AUTOSAVE_MS = 1500;  // salva 1,5s depois que você para de digitar
 const RETRY_MIN_MS = 3000; // 1ª retentativa após erro
 const RETRY_MAX_MS = 30000;// teto do backoff
+
+// Nome de quem usa o app (aparece na saudação da biblioteca). Troque aqui.
+const APP_OWNER = "Cleide";
 
 /* ===================== 3. CAMADA DB (MOCK — modo demonstração) =====================
    Mesma interface da versão real, mas guarda tudo em memória (sem Supabase).
@@ -1089,7 +1091,7 @@ async function handleLogout() {
 /* ===================== 7. BIBLIOTECA ===================== */
 async function loadLibrary() {
   showView("library");
-  $("#library-greeting").textContent = state.user ? state.user.email : "";
+  $("#library-title").textContent = "Olá, " + APP_OWNER + "!";
   const { data, error } = await db.listBooks();
   if (error) { toast("Não consegui carregar seus livros.", true); return; }
   state.books = data || [];
@@ -1467,7 +1469,6 @@ function wireEvents() {
   $("#logout-btn").addEventListener("click", handleLogout);
 
   // biblioteca
-  $("#new-book-btn").addEventListener("click", onNewBook);
   $("#empty-new-book-btn").addEventListener("click", onNewBook);
 
   // editor
