@@ -1,6 +1,6 @@
 /* Manuscrito — Service Worker
    Faz o app abrir offline. Bump a versão a cada deploy pra invalidar o cache antigo. */
-const CACHE = "manuscrito-v3";
+const CACHE = "manuscrito-v4";
 
 // "casco" do app (mesma origem) — pré-cacheado na instalação
 const SHELL = [
