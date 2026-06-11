@@ -37,6 +37,9 @@
   --accent-soft: #f0e2d8;   /* fundo tom-sobre-tom do accent */
   --danger:      #a4392b;
   --ok:          #46703f;   /* verde discreto do "Salvo" */
+  --rail:        #262019;   /* marrom quase-preto quente (pill da navegação) */
+  --rail-2:      #322a21;   /* hover dentro do pill */
+  --rail-ink:    #e9e1d2;   /* ícones creme da navegação */
 
   --radius:    11px;
   --radius-sm: 7px;
@@ -486,15 +489,24 @@ textarea.input { resize: vertical; min-height: 84px; line-height: 1.5; }
   max-width: var(--measure);
   border: none;
   background: transparent;
-  resize: none;
   outline: none;
   color: var(--ink);
   font-family: var(--font-serif);
   font-size: 1.18rem;
   line-height: 1.85;
   padding: 44px 24px 160px;
+  white-space: pre-wrap;      /* preserva quebras de linha (inclusive de capítulos antigos em texto puro) */
+  overflow-wrap: break-word;
+  min-height: 50vh;
 }
-.editor-area::placeholder { color: var(--ink-faint); }
+/* placeholder do editor editável (contenteditable não tem placeholder nativo) */
+.editor-area:empty::before {
+  content: attr(data-placeholder);
+  color: var(--ink-faint);
+  pointer-events: none;
+}
+.editor-area p { margin: 0 0 1em; }
+.editor-area ul, .editor-area ol { margin: 0 0 1em; padding-left: 1.4em; }
 
 .editor-placeholder {
   flex: 1;
@@ -505,6 +517,71 @@ textarea.input { resize: vertical; min-height: 84px; line-height: 1.5; }
 }
 .editor-placeholder .empty-mark { font-family: var(--font-serif); font-size: 2.6rem; color: var(--line-strong); }
 .editor-placeholder p { margin: 12px 0 18px; font-size: .98rem; }
+
+/* ---------- barra inferior de formatação ---------- */
+.format-bar {
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  padding: 8px 14px; border-top: 1px solid var(--line); background: var(--surface-2);
+}
+.fb-group { display: flex; align-items: center; gap: 4px; }
+.fb-sep { width: 1px; height: 22px; background: var(--line-strong); margin: 0 6px; }
+.fb-btn {
+  min-width: 32px; height: 32px; padding: 0 8px; border: 1px solid transparent; background: transparent;
+  border-radius: var(--radius-sm); color: var(--ink-soft); font-size: .95rem; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; font-family: var(--font-sans);
+}
+.fb-btn:hover { background: var(--surface); color: var(--ink); }
+.fb-btn.active { background: var(--accent); color: #fdf6ee; border-color: var(--accent); }
+.fb-btn b { font-weight: 700; } .fb-btn i { font-style: italic; } .fb-btn u { text-decoration: underline; }
+.fb-select {
+  height: 32px; border: 1px solid var(--line-strong); background: var(--surface);
+  border-radius: var(--radius-sm); color: var(--ink); font-family: var(--font-sans);
+  font-size: .86rem; padding: 0 8px; cursor: pointer;
+}
+.fb-font { min-width: 150px; } .fb-size { width: 64px; }
+@media (max-width: 760px) {
+  .format-bar { gap: 4px; padding: 8px; }
+  .fb-font { min-width: 110px; }
+  .fb-sep { margin: 0 3px; }
+}
+
+/* ---------- navegação inferior (pill flutuante, só na biblioteca) ---------- */
+.navbar {
+  position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%);
+  display: flex; align-items: center; gap: 6px;
+  padding: 10px 12px; border-radius: 30px;
+  background: var(--rail);
+  box-shadow: 0 12px 38px rgba(40,33,20,.32), inset 0 1px 0 rgba(255,255,255,.05);
+  z-index: 50;
+}
+.nav-item {
+  position: relative; width: 48px; height: 48px; border: none; background: transparent;
+  border-radius: 50%; color: var(--rail-ink); cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .15s ease, color .15s ease;
+}
+.nav-item svg { width: 23px; height: 23px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.nav-item:hover { background: var(--rail-2); }
+.nav-item.active { background: var(--accent); color: #fdf6ee; }
+.nav-sep { width: 1px; height: 24px; background: rgba(233,225,210,.14); margin: 0 4px; }
+.nav-item::after {
+  content: attr(data-label); position: absolute; bottom: 58px; left: 50%; transform: translateX(-50%);
+  background: var(--ink); color: #fdf6ee; font-size: .78rem; padding: 5px 10px; border-radius: 7px;
+  white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity .12s ease;
+  box-shadow: 0 6px 18px rgba(40,33,20,.25);
+}
+.nav-item:hover::after { opacity: 1; }
+.nav-conta-wrap { position: relative; display: flex; }
+.nav-menu {
+  position: absolute; bottom: 60px; right: 0;
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-md); padding: 6px; min-width: 140px;
+}
+.nav-menu-item {
+  width: 100%; text-align: left; border: none; background: transparent; cursor: pointer;
+  padding: 9px 12px; border-radius: 6px; color: var(--ink); font-family: var(--font-sans); font-size: .9rem;
+}
+.nav-menu-item:hover { background: var(--surface-2); }
 
 /* barra de scroll discreta */
 .sidebar::-webkit-scrollbar, .editor-body::-webkit-scrollbar { width: 10px; }
@@ -694,9 +771,26 @@ textarea.input { resize: vertical; min-height: 84px; line-height: 1.5; }
         <button class="btn-primary" id="empty-new-book-btn">Criar primeiro livro</button>
       </div>
     </main>
-  </section>
 
-  <!-- ============================ TELA: EDITOR ============================ -->
+    <!-- navegação inferior (só na biblioteca) -->
+    <nav class="navbar" id="navbar">
+      <button class="nav-item active" id="nav-biblioteca" data-label="Biblioteca" title="Biblioteca">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 4l9 6.5"/><path d="M5 9.5V20h14V9.5"/><path d="M10 20v-5h4v5"/></svg>
+      </button>
+      <button class="nav-item" id="nav-escrever" data-label="Escrever" title="Escrever">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19.5 3 20.5 4 16.5z"/></svg>
+      </button>
+      <div class="nav-sep"></div>
+      <div class="nav-conta-wrap">
+        <div class="nav-menu" id="nav-menu" hidden>
+          <button class="nav-menu-item" id="nav-logout">Sair</button>
+        </div>
+        <button class="nav-item" id="nav-conta" data-label="Conta" title="Conta">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>
+        </button>
+      </div>
+    </nav>
+  </section>
   <section id="view-editor" class="view">
     <!-- Sidebar: capítulos -->
     <aside class="sidebar">
@@ -733,8 +827,46 @@ textarea.input { resize: vertical; min-height: 84px; line-height: 1.5; }
       </div>
 
       <div class="editor-body" id="editor-body" hidden>
-        <textarea class="editor-area" id="editor-area"
-          placeholder="Comece a escrever…" spellcheck="true"></textarea>
+        <div class="editor-area" id="editor-area"
+             contenteditable="true" spellcheck="true" lang="pt-BR"
+             data-placeholder="Comece a escrever…"></div>
+      </div>
+
+      <!-- barra inferior de formatação (aparece junto com o editor) -->
+      <div class="format-bar" id="format-bar" hidden>
+        <div class="fb-group">
+          <select class="fb-select fb-font" id="fb-font" title="Fonte">
+            <option value='"Newsreader", Georgia, serif'>Newsreader</option>
+            <option value="Lora, Georgia, serif">Lora</option>
+            <option value="Georgia, serif">Georgia</option>
+            <option value="'Times New Roman', serif">Times New Roman</option>
+            <option value='"Hanken Grotesk", sans-serif'>Hanken Grotesk</option>
+            <option value="Arial, sans-serif">Arial</option>
+            <option value="'Courier New', monospace">Courier New</option>
+          </select>
+          <select class="fb-select fb-size" id="fb-size" title="Tamanho">
+            <option>14</option><option>16</option><option selected>18</option>
+            <option>20</option><option>24</option><option>28</option><option>32</option>
+          </select>
+        </div>
+        <div class="fb-sep"></div>
+        <div class="fb-group">
+          <button class="fb-btn" data-cmd="bold" title="Negrito (Ctrl+B)"><b>N</b></button>
+          <button class="fb-btn" data-cmd="italic" title="Itálico (Ctrl+I)"><i>I</i></button>
+          <button class="fb-btn" data-cmd="underline" title="Sublinhado (Ctrl+U)"><u>S</u></button>
+        </div>
+        <div class="fb-sep"></div>
+        <div class="fb-group">
+          <button class="fb-btn" data-cmd="justifyLeft" title="Alinhar à esquerda">⯇</button>
+          <button class="fb-btn" data-cmd="justifyCenter" title="Centralizar">≡</button>
+          <button class="fb-btn" data-cmd="justifyRight" title="Alinhar à direita">⯈</button>
+          <button class="fb-btn" data-cmd="justifyFull" title="Justificar">☰</button>
+        </div>
+        <div class="fb-sep"></div>
+        <div class="fb-group">
+          <button class="fb-btn" data-cmd="insertUnorderedList" title="Lista com marcadores">•</button>
+          <button class="fb-btn" data-cmd="insertOrderedList" title="Lista numerada">1.</button>
+        </div>
       </div>
 
       <div class="editor-placeholder" id="editor-placeholder">
@@ -1351,7 +1483,7 @@ async function selectChapter(ch) {
     ((draft.content || "") !== (ch.content || "") || (draft.title || "") !== (ch.title || ""));
 
   $("#chapter-title").value = draftIsNewer ? (draft.title || "")   : (ch.title || "");
-  $("#editor-area").value   = draftIsNewer ? (draft.content || "") : (ch.content || "");
+  setEditorContent(draftIsNewer ? (draft.content || "") : (ch.content || ""));
   showEditorActive();
 
   if (draftIsNewer) {
@@ -1365,20 +1497,106 @@ async function selectChapter(ch) {
   }
 
   // foca no fim do texto
-  const area = $("#editor-area");
-  area.focus();
-  area.setSelectionRange(area.value.length, area.value.length);
+  placeCaretEnd($("#editor-area"));
+}
+
+/* ---- editor rich-text: helpers (isolam o contenteditable do resto do app) ---- */
+function getEditorContent() { return $("#editor-area").innerHTML; }
+function setEditorContent(html) { $("#editor-area").innerHTML = html || ""; }
+function placeCaretEnd(el) {
+  el.focus();
+  try {
+    const r = document.createRange(); r.selectNodeContents(el); r.collapse(false);
+    const s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+  } catch (_) {}
 }
 
 function showEditorActive() {
   $("#editor-placeholder").hidden = true;
   $("#editor-top").hidden = false;
   $("#editor-body").hidden = false;
+  $("#format-bar").hidden = false;
 }
 function showEditorEmpty() {
   $("#editor-placeholder").hidden = false;
   $("#editor-top").hidden = true;
   $("#editor-body").hidden = true;
+  $("#format-bar").hidden = true;
+}
+
+/* ---- barra de formatação (rich-text via execCommand) ---- */
+function initFormatBar() {
+  try { document.execCommand("styleWithCSS", false, true); } catch (_) {}
+  const editor = $("#editor-area");
+
+  document.querySelectorAll(".fb-btn[data-cmd]").forEach((btn) => {
+    btn.addEventListener("mousedown", (e) => e.preventDefault()); // mantém a seleção
+    btn.addEventListener("click", () => {
+      editor.focus();
+      document.execCommand(btn.dataset.cmd, false, null);
+      onEditorInput(); // conta como alteração -> autosave
+      syncFormatBar();
+    });
+  });
+
+  $("#fb-font").addEventListener("change", (e) => applyStyleToSelection("fontFamily", e.target.value));
+  $("#fb-size").addEventListener("change", (e) => applyStyleToSelection("fontSize", e.target.value + "px"));
+
+  document.addEventListener("selectionchange", () => {
+    if (document.activeElement === editor) syncFormatBar();
+  });
+}
+// aplica fonte/tamanho à seleção (envolve num span com estilo inline)
+function applyStyleToSelection(prop, value) {
+  const editor = $("#editor-area");
+  editor.focus();
+  const sel = window.getSelection();
+  if (!sel.rangeCount || sel.isCollapsed) return;
+  const range = sel.getRangeAt(0);
+  const span = document.createElement("span");
+  span.style[prop] = value;
+  try { range.surroundContents(span); }
+  catch (_) { const frag = range.extractContents(); span.appendChild(frag); range.insertNode(span); }
+  sel.removeAllRanges();
+  onEditorInput();
+}
+// destaca N/I/S e alinhamento conforme a posição do cursor
+function syncFormatBar() {
+  ["bold","italic","underline","justifyLeft","justifyCenter","justifyRight","justifyFull"].forEach((cmd) => {
+    const b = document.querySelector('.fb-btn[data-cmd="' + cmd + '"]');
+    if (!b) return;
+    let on = false; try { on = document.queryCommandState(cmd); } catch (_) {}
+    b.classList.toggle("active", on);
+  });
+}
+
+/* ---- navegação inferior (só na biblioteca) ---- */
+function initBottomNav() {
+  $("#nav-biblioteca").addEventListener("click", () => {
+    closeNavMenu(); window.scrollTo({ top: 0, behavior: "smooth" });
+  });
+  // "Escrever": abre o livro mais recente, ou cria o primeiro se não houver
+  $("#nav-escrever").addEventListener("click", () => {
+    closeNavMenu();
+    if (state.books && state.books.length) openBook(state.books[0]);
+    else onNewBook();
+  });
+  // "Conta": abre/fecha o menuzinho
+  $("#nav-conta").addEventListener("click", (e) => {
+    e.stopPropagation();
+    const m = $("#nav-menu");
+    m.hidden = !m.hidden;
+    $("#nav-conta").classList.toggle("active", !m.hidden);
+  });
+  $("#nav-logout").addEventListener("click", () => { closeNavMenu(); handleLogout(); });
+  // clicar fora fecha o menu
+  document.addEventListener("click", (e) => {
+    if (!$("#navbar").contains(e.target)) closeNavMenu();
+  });
+}
+function closeNavMenu() {
+  const m = $("#nav-menu"); if (m) m.hidden = true;
+  const c = $("#nav-conta"); if (c) c.classList.remove("active");
 }
 
 async function onNewChapter() {
@@ -1459,7 +1677,7 @@ function onEditorInput() {
   // espelho local instantâneo (síncrono): nada se perde mesmo se fechar agora
   saveDraft(state.currentChapter.id, {
     title: $("#chapter-title").value,
-    content: $("#editor-area").value,
+    content: getEditorContent(),
   });
   clearTimeout(state.autosaveTimer);
   state.autosaveTimer = setTimeout(saveCurrentChapter, AUTOSAVE_MS);
@@ -1478,7 +1696,7 @@ async function saveCurrentChapter() {
   setStatus("saving");
 
   const id = state.currentChapter.id;
-  const fields = { title: $("#chapter-title").value.trim() || "Sem título", content: $("#editor-area").value };
+  const fields = { title: $("#chapter-title").value.trim() || "Sem título", content: getEditorContent() };
 
   let result;
   try {
@@ -1560,12 +1778,18 @@ function wireEvents() {
   // biblioteca
   $("#empty-new-book-btn").addEventListener("click", onNewBook);
 
+  // navegação inferior (biblioteca)
+  initBottomNav();
+
   // editor
   $("#back-btn").addEventListener("click", backToLibrary);
   $("#book-rename").addEventListener("click", () => { if (state.currentBook) onEditBook(state.currentBook); });
   $("#new-chapter-btn").addEventListener("click", onNewChapter);
   $("#placeholder-new-chapter-btn").addEventListener("click", onNewChapter);
   $("#save-btn").addEventListener("click", () => { state.dirty = true; saveCurrentChapter(); });
+
+  // barra de formatação do editor
+  initFormatBar();
 
   // autosave: digitação no corpo e no título do capítulo
   $("#editor-area").addEventListener("input", onEditorInput);
