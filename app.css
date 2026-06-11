@@ -417,6 +417,7 @@ textarea.input { resize: vertical; min-height: 84px; line-height: 1.5; }
   flex-direction: column;
   min-width: 0;
   height: 100vh;
+  position: relative; /* ancora o pill de formatação flutuante */
 }
 .editor-top {
   border-bottom: 1px solid var(--line);
@@ -502,70 +503,37 @@ textarea.input { resize: vertical; min-height: 84px; line-height: 1.5; }
 .editor-placeholder .empty-mark { font-family: var(--font-serif); font-size: 2.6rem; color: var(--line-strong); }
 .editor-placeholder p { margin: 12px 0 18px; font-size: .98rem; }
 
-/* ---------- barra inferior de formatação ---------- */
+/* ---------- barra de formatação: pill flutuante (só no editor) ---------- */
 .format-bar {
-  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
-  padding: 8px 14px; border-top: 1px solid var(--line); background: var(--surface-2);
-}
-.fb-group { display: flex; align-items: center; gap: 4px; }
-.fb-sep { width: 1px; height: 22px; background: var(--line-strong); margin: 0 6px; }
-.fb-btn {
-  min-width: 32px; height: 32px; padding: 0 8px; border: 1px solid transparent; background: transparent;
-  border-radius: var(--radius-sm); color: var(--ink-soft); font-size: .95rem; cursor: pointer;
-  display: inline-flex; align-items: center; justify-content: center; font-family: var(--font-sans);
-}
-.fb-btn:hover { background: var(--surface); color: var(--ink); }
-.fb-btn.active { background: var(--accent); color: #fdf6ee; border-color: var(--accent); }
-.fb-btn b { font-weight: 700; } .fb-btn i { font-style: italic; } .fb-btn u { text-decoration: underline; }
-.fb-select {
-  height: 32px; border: 1px solid var(--line-strong); background: var(--surface);
-  border-radius: var(--radius-sm); color: var(--ink); font-family: var(--font-sans);
-  font-size: .86rem; padding: 0 8px; cursor: pointer;
-}
-.fb-font { min-width: 150px; } .fb-size { width: 64px; }
-@media (max-width: 760px) {
-  .format-bar { gap: 4px; padding: 8px; }
-  .fb-font { min-width: 110px; }
-  .fb-sep { margin: 0 3px; }
-}
-
-/* ---------- navegação inferior (pill flutuante, só na biblioteca) ---------- */
-.navbar {
-  position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%);
-  display: flex; align-items: center; gap: 6px;
-  padding: 10px 12px; border-radius: 30px;
+  position: absolute; left: 50%; bottom: 20px; transform: translateX(-50%);
+  display: flex; align-items: center; gap: 4px; flex-wrap: nowrap;
+  padding: 8px 12px; border-radius: 30px;
   background: var(--rail);
   box-shadow: 0 12px 38px rgba(40,33,20,.32), inset 0 1px 0 rgba(255,255,255,.05);
-  z-index: 50;
+  z-index: 40; max-width: calc(100% - 28px);
 }
-.nav-item {
-  position: relative; width: 48px; height: 48px; border: none; background: transparent;
-  border-radius: 50%; color: var(--rail-ink); cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
+.fb-group { display: flex; align-items: center; gap: 4px; }
+.fb-sep { width: 1px; height: 24px; background: rgba(255,255,255,.18); margin: 0 6px; flex: none; }
+.fb-btn {
+  min-width: 38px; height: 38px; padding: 0 8px; border: none; background: transparent;
+  border-radius: 50%; color: #ffffff; font-size: 1rem; cursor: pointer; flex: none;
+  display: inline-flex; align-items: center; justify-content: center; font-family: var(--font-sans);
   transition: background .15s ease, color .15s ease;
 }
-.nav-item svg { width: 23px; height: 23px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-.nav-item:hover { background: var(--rail-2); }
-.nav-item.active { background: var(--accent); color: #fdf6ee; }
-.nav-sep { width: 1px; height: 24px; background: rgba(233,225,210,.14); margin: 0 4px; }
-.nav-item::after {
-  content: attr(data-label); position: absolute; bottom: 58px; left: 50%; transform: translateX(-50%);
-  background: var(--ink); color: #fdf6ee; font-size: .78rem; padding: 5px 10px; border-radius: 7px;
-  white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity .12s ease;
-  box-shadow: 0 6px 18px rgba(40,33,20,.25);
+.fb-btn:hover { background: var(--rail-2); color: #fff; }
+.fb-btn.active { background: var(--accent); color: #fff; }
+.fb-btn b { font-weight: 700; } .fb-btn i { font-style: italic; } .fb-btn u { text-decoration: underline; }
+.fb-select {
+  height: 36px; border: 1px solid rgba(255,255,255,.20); background: var(--rail-2); color: #ffffff;
+  border-radius: 18px; font-family: var(--font-sans); font-size: .85rem; padding: 0 12px; cursor: pointer; flex: none;
 }
-.nav-item:hover::after { opacity: 1; }
-.nav-conta-wrap { position: relative; display: flex; }
-.nav-menu {
-  position: absolute; bottom: 60px; right: 0;
-  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-sm);
-  box-shadow: var(--shadow-md); padding: 6px; min-width: 140px;
+.fb-select option { color: #221f1a; } /* a lista do dropdown abre com fundo claro do sistema */
+.fb-font { min-width: 140px; } .fb-size { width: 62px; }
+@media (max-width: 760px) {
+  .format-bar { gap: 3px; padding: 7px 10px; max-width: calc(100vw - 18px); overflow-x: auto; }
+  .fb-font { min-width: 104px; }
+  .fb-sep { margin: 0 4px; }
 }
-.nav-menu-item {
-  width: 100%; text-align: left; border: none; background: transparent; cursor: pointer;
-  padding: 9px 12px; border-radius: 6px; color: var(--ink); font-family: var(--font-sans); font-size: .9rem;
-}
-.nav-menu-item:hover { background: var(--surface-2); }
 
 /* barra de scroll discreta */
 .sidebar::-webkit-scrollbar, .editor-body::-webkit-scrollbar { width: 10px; }
