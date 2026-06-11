@@ -423,6 +423,20 @@ function setAuthMessage(text, type) {
   el.className = "auth-msg" + (type ? " " + type : "");
 }
 
+// mostra o painel "Conta criada!" (com a animação) no lugar do formulário
+function showAuthSuccess(email) {
+  $("#auth-success-email").textContent = email;
+  $("#auth-default").hidden = true;
+  $("#auth-success").hidden = false; // ao deixar de ser display:none, as animações disparam
+}
+// volta do painel de sucesso para o formulário (em modo login)
+function showAuthForm() {
+  $("#auth-success").hidden = true;
+  $("#auth-default").hidden = false;
+  if (state.authMode !== "login") toggleAuthMode();
+  setAuthMessage("");
+}
+
 function toggleAuthMode() {
   state.authMode = state.authMode === "login" ? "signup" : "login";
   const isLogin = state.authMode === "login";
@@ -452,10 +466,10 @@ async function handleAuthSubmit(e) {
       if (error) throw error;
       if (data.session) {
         setAuthMessage("Conta criada! Entrando…", "info");
+        // o onAuthStateChange abre a biblioteca
       } else {
-        // confirmação de e-mail provavelmente está ativa
-        setAuthMessage("Conta criada. Se houver confirmação por e-mail, confirme pelo link enviado e depois entre.", "info");
-        toggleAuthMode();
+        // confirmação de e-mail ativa: mostra o painel animado de "Conta criada!"
+        showAuthSuccess(email);
       }
     }
   } catch (err) {
@@ -866,6 +880,7 @@ function wireEvents() {
   // login
   $("#auth-form").addEventListener("submit", handleAuthSubmit);
   $("#auth-toggle-link").addEventListener("click", toggleAuthMode);
+  $("#auth-success-back").addEventListener("click", showAuthForm);
   $("#logout-btn").addEventListener("click", handleLogout);
 
   // biblioteca
