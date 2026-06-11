@@ -1,6 +1,6 @@
 /* Manuscrito — Service Worker
    Faz o app abrir offline. Bump a versão a cada deploy pra invalidar o cache antigo. */
-const CACHE = "manuscrito-v1";
+const CACHE = "manuscrito-v2";
 
 // "casco" do app (mesma origem) — pré-cacheado na instalação
 const SHELL = [
@@ -46,16 +46,17 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Mesma origem (casco): cache-first, atualizando o cache em segundo plano
+  // Mesma origem (casco do app): NETWORK-FIRST.
+  // Online, sempre pega a versão mais nova da rede (acaba o "mudei o código e a tela não muda").
+  // Offline, cai pro cache. O cache serve só como rede de segurança, não como fonte principal.
   if (url.origin === self.location.origin) {
     event.respondWith(
-      caches.match(req).then((hit) => {
-        const net = fetch(req).then((res) => {
+      fetch(req)
+        .then((res) => {
           if (res && res.ok) { const copy = res.clone(); caches.open(CACHE).then((c) => c.put(req, copy)); }
           return res;
-        }).catch(() => hit);
-        return hit || net;
-      })
+        })
+        .catch(() => caches.match(req))
     );
     return;
   }
