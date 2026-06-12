@@ -33,6 +33,10 @@
 
         <!-- form com preventDefault no JS (Enter envia) -->
         <form id="auth-form" autocomplete="on">
+          <div class="field" id="auth-name-field" hidden>
+            <label for="auth-name">Nome</label>
+            <input class="input" type="text" id="auth-name" placeholder="Seu nome" autocomplete="name" />
+          </div>
           <div class="field">
             <label for="auth-email">E-mail</label>
             <input class="input" type="email" id="auth-email" placeholder="voce@email.com" required />
@@ -115,6 +119,18 @@
       <div class="sidebar-empty" id="chapters-empty" hidden>
         Nenhum capítulo ainda. Clique em <strong>+</strong> para criar o primeiro.
       </div>
+
+      <!-- ações do livro -->
+      <div class="book-actions">
+        <button class="book-act" id="export-pdf-btn">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
+          Exportar PDF
+        </button>
+        <button class="book-act" id="read-book-btn">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5h18v14H3z"/><path d="M12 5v14"/></svg>
+          Ler o livro
+        </button>
+      </div>
     </aside>
 
     <!-- Área de escrita -->
@@ -175,11 +191,28 @@
       </div>
 
       <div class="editor-placeholder" id="editor-placeholder">
-        <div class="empty-mark">✍</div>
         <button class="btn-primary" id="placeholder-new-chapter-btn">Novo capítulo</button>
       </div>
     </section>
   </section>
+
+  <!-- ============================ MODO LEITURA ============================ -->
+  <div class="reader" id="reader" hidden>
+    <div class="reader-top">
+      <button class="reader-x" id="reader-close" title="Fechar" aria-label="Fechar leitura">✕</button>
+      <div class="reader-title" id="reader-title">—</div>
+      <div class="reader-sizes">
+        <button id="reader-smaller" title="Diminuir letra" aria-label="Diminuir letra">A-</button>
+        <button id="reader-bigger" title="Aumentar letra" aria-label="Aumentar letra">A+</button>
+      </div>
+    </div>
+    <div class="reader-scroll">
+      <div class="reader-col" id="reader-col"><!-- conteúdo do livro injetado via JS --></div>
+    </div>
+  </div>
+
+  <!-- raiz de impressão (Exportar PDF): só aparece na hora de imprimir -->
+  <div id="print-root" aria-hidden="true"></div>
 
   <!-- Containers de modal e toast -->
   <div id="modal-root"></div>
