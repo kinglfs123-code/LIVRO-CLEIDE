@@ -436,6 +436,8 @@ textarea.input { resize: vertical; min-height: 84px; line-height: 1.5; }
   height: 100vh;
   position: relative; /* ancora o pill de formatação flutuante */
 }
+/* com capítulo aberto: reserva a faixa do pill + 0,6cm — o texto PARA acima da barra */
+.editor.bounded { padding-bottom: 97px; }
 .editor-top {
   border-bottom: 1px solid var(--line);
 }
@@ -496,7 +498,7 @@ textarea.input { resize: vertical; min-height: 84px; line-height: 1.5; }
   font-family: var(--font-serif);
   font-size: 1.18rem;
   line-height: 1.85;
-  padding: 44px 24px 110px;   /* espaço embaixo p/ o pill flutuante não cobrir o texto */
+  padding: 44px 24px 18px;    /* o limite inferior agora é do painel (.editor.bounded) */
   white-space: pre-wrap;      /* preserva quebras de linha (inclusive de capítulos antigos em texto puro) */
   overflow-wrap: break-word;
   min-height: 100%;           /* ocupa toda a altura visível, não só metade */
@@ -544,7 +546,7 @@ textarea.input { resize: vertical; min-height: 84px; line-height: 1.5; }
   height: 36px; border: 1px solid rgba(255,255,255,.20); background: var(--rail-2); color: #ffffff;
   border-radius: 18px; font-family: var(--font-sans); font-size: .85rem; padding: 0 12px; cursor: pointer; flex: none;
 }
-.fb-select option { color: #221f1a; } /* a lista do dropdown abre com fundo claro do sistema */
+.fb-select option { color: #ffffff; background: var(--rail); } /* popup do dropdown: branco sobre escuro, legível */
 .fb-font { min-width: 140px; } .fb-size { width: 62px; }
 @media (max-width: 760px) {
   .format-bar { gap: 3px; padding: 7px 10px; max-width: calc(100vw - 18px); overflow-x: auto; }
@@ -657,6 +659,95 @@ textarea.input { resize: vertical; min-height: 84px; line-height: 1.5; }
   .library { padding: 28px 18px 60px; }
 }
 
+/* ---------- ações do livro (sidebar): Exportar PDF / Ler ---------- */
+.book-actions {
+  margin-top: auto;             /* cola no rodapé da sidebar */
+  display: flex; flex-direction: column; gap: 8px;
+  padding-top: 14px; border-top: 1px solid var(--line);
+}
+.book-act {
+  display: flex; align-items: center; gap: 9px;
+  padding: 10px 12px; border-radius: 9px;
+  border: 1px solid var(--line-strong); background: var(--surface);
+  color: var(--ink); font-size: .9rem; font-family: var(--font-sans); cursor: pointer;
+  transition: background .15s ease;
+}
+.book-act:hover { background: var(--surface-2); }
+.book-act svg { width: 17px; height: 17px; fill: none; stroke: var(--accent); stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+
+/* ---------- modo leitura ---------- */
+.reader {
+  position: fixed; inset: 0; z-index: 80;
+  background: var(--paper);
+  background-image: radial-gradient(120% 60% at 50% -5%, #fbf7ee 0%, var(--paper) 55%);
+  display: flex; flex-direction: column;
+}
+.reader-top {
+  position: sticky; top: 0; flex: none;
+  display: flex; align-items: center; justify-content: space-between; gap: 14px;
+  padding: 14px 22px;
+  background: rgba(246,242,233,.85); backdrop-filter: blur(6px);
+  border-bottom: 1px solid var(--line);
+}
+.reader-x {
+  width: 36px; height: 36px; border-radius: 50%;
+  border: 1px solid var(--line-strong); background: var(--surface);
+  color: var(--ink-soft); cursor: pointer; font-size: .95rem;
+  display: flex; align-items: center; justify-content: center;
+}
+.reader-x:hover { background: var(--surface-2); }
+.reader-title { font-family: var(--font-serif); font-size: 1.05rem; flex: 1; text-align: center; }
+.reader-sizes { display: flex; gap: 6px; }
+.reader-sizes button {
+  width: 34px; height: 34px; border-radius: 8px;
+  border: 1px solid var(--line-strong); background: var(--surface);
+  color: var(--ink-soft); cursor: pointer; font-family: var(--font-serif); font-size: .9rem;
+}
+.reader-sizes button:hover { background: var(--surface-2); }
+.reader-scroll { flex: 1; overflow-y: auto; }
+.reader-col {
+  max-width: 58ch; margin: 0 auto; padding: 46px 24px 90px;
+  font-family: var(--font-serif); line-height: 1.9; color: #2a2620;
+  font-size: var(--reader-size, 19px);
+}
+.reader-col .r-book-title { text-align: center; font-size: 2.2rem; font-weight: 500; margin: 0 0 4px; font-family: var(--font-serif); }
+.reader-col .r-book-by { text-align: center; color: var(--ink-soft); font-style: italic; margin: 0 0 52px; }
+.reader-col .r-ch {
+  font-size: .74rem; letter-spacing: .16em; text-transform: uppercase;
+  color: var(--accent); font-family: var(--font-sans); margin: 44px 0 4px;
+}
+.reader-col h2.r-title { font-weight: 500; font-size: 1.7em; margin: 0 0 20px; }
+.reader-col .r-body { white-space: pre-wrap; overflow-wrap: break-word; }
+.reader-col .r-body p { margin: 0 0 1.1em; }
+
+/* ---------- impressão (Exportar PDF) ---------- */
+#print-root { display: none; }
+@media print {
+  body * { visibility: hidden; }
+  #print-root, #print-root * { visibility: visible; }
+  #print-root {
+    display: block; position: absolute; inset: 0;
+    font-family: var(--font-serif); color: #1c1a17;
+  }
+  .p-cover {
+    height: 100vh; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; text-align: center;
+    page-break-after: always;
+  }
+  .p-cover .orn { font-size: 1.8rem; color: #c7bfae; margin-bottom: 24px; }
+  .p-cover h1 { font-size: 2.4rem; font-weight: 500; margin: 0 0 10px; line-height: 1.15; }
+  .p-cover .by { font-size: 1rem; color: #6b6457; font-style: italic; }
+  .p-cover .yr { margin-top: 28px; font-size: .85rem; color: #9a9488; font-family: var(--font-sans); }
+  .p-chapter { page-break-before: always; padding: 24px 8mm; }
+  .p-chapter .p-ch {
+    font-size: .72rem; letter-spacing: .16em; text-transform: uppercase;
+    color: #9c4a2f; font-family: var(--font-sans); margin: 0 0 4px;
+  }
+  .p-chapter h2 { font-size: 1.5rem; font-weight: 500; margin: 0 0 16px; }
+  .p-chapter .p-body { font-size: 12pt; line-height: 1.75; text-align: justify; white-space: pre-wrap; overflow-wrap: break-word; }
+  .p-chapter .p-body p { margin: 0 0 .85em; }
+}
+
   </style>
 
   <!-- PWA: instalável e abre offline -->
@@ -678,6 +769,10 @@ textarea.input { resize: vertical; min-height: 84px; line-height: 1.5; }
 
         <!-- form com preventDefault no JS (Enter envia) -->
         <form id="auth-form" autocomplete="on">
+          <div class="field" id="auth-name-field" hidden>
+            <label for="auth-name">Nome</label>
+            <input class="input" type="text" id="auth-name" placeholder="Seu nome" autocomplete="name" />
+          </div>
           <div class="field">
             <label for="auth-email">E-mail</label>
             <input class="input" type="email" id="auth-email" placeholder="voce@email.com" required />
@@ -760,6 +855,18 @@ textarea.input { resize: vertical; min-height: 84px; line-height: 1.5; }
       <div class="sidebar-empty" id="chapters-empty" hidden>
         Nenhum capítulo ainda. Clique em <strong>+</strong> para criar o primeiro.
       </div>
+
+      <!-- ações do livro -->
+      <div class="book-actions">
+        <button class="book-act" id="export-pdf-btn">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
+          Exportar PDF
+        </button>
+        <button class="book-act" id="read-book-btn">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5h18v14H3z"/><path d="M12 5v14"/></svg>
+          Ler o livro
+        </button>
+      </div>
     </aside>
 
     <!-- Área de escrita -->
@@ -820,11 +927,28 @@ textarea.input { resize: vertical; min-height: 84px; line-height: 1.5; }
       </div>
 
       <div class="editor-placeholder" id="editor-placeholder">
-        <div class="empty-mark">✍</div>
         <button class="btn-primary" id="placeholder-new-chapter-btn">Novo capítulo</button>
       </div>
     </section>
   </section>
+
+  <!-- ============================ MODO LEITURA ============================ -->
+  <div class="reader" id="reader" hidden>
+    <div class="reader-top">
+      <button class="reader-x" id="reader-close" title="Fechar" aria-label="Fechar leitura">✕</button>
+      <div class="reader-title" id="reader-title">—</div>
+      <div class="reader-sizes">
+        <button id="reader-smaller" title="Diminuir letra" aria-label="Diminuir letra">A-</button>
+        <button id="reader-bigger" title="Aumentar letra" aria-label="Aumentar letra">A+</button>
+      </div>
+    </div>
+    <div class="reader-scroll">
+      <div class="reader-col" id="reader-col"><!-- conteúdo do livro injetado via JS --></div>
+    </div>
+  </div>
+
+  <!-- raiz de impressão (Exportar PDF): só aparece na hora de imprimir -->
+  <div id="print-root" aria-hidden="true"></div>
 
   <!-- Containers de modal e toast -->
   <div id="modal-root"></div>
@@ -1198,6 +1322,8 @@ function toggleAuthMode() {
   $("#auth-submit").textContent = isLogin ? "Entrar" : "Criar conta";
   $("#auth-toggle-text").textContent = isLogin ? "Ainda não tem conta?" : "Já tem conta?";
   $("#auth-toggle-link").textContent = isLogin ? "Criar conta" : "Entrar";
+  $("#auth-name-field").hidden = isLogin; // Nome só no cadastro
+  $("#auth-name").required = !isLogin;
   setAuthMessage("");
 }
 
@@ -1217,7 +1343,9 @@ async function handleAuthSubmit(e) {
       if (error) throw error;
       // o onAuthStateChange cuida de abrir a biblioteca
     } else {
-      const { data, error } = await db.signUp(email, password);
+      const name = $("#auth-name").value.trim();
+      if (!name) { setAuthMessage("Escreva seu nome pra personalizar o caderno.", "error"); btn.disabled = false; return; }
+      const { data, error } = await db.signUp(email, password, name);
       if (error) throw error;
       if (data.session) {
         setAuthMessage("Conta criada! Entrando…", "info");
@@ -1260,7 +1388,7 @@ async function handleLogout() {
 /* ===================== 7. BIBLIOTECA ===================== */
 async function loadLibrary() {
   showView("library");
-  $("#library-title").textContent = "Olá, " + APP_OWNER + "!";
+  $("#library-title").textContent = "Olá, " + ownerName() + "!";
   const { data, error } = await db.listBooks();
   if (error) { toast("Não consegui carregar seus livros.", true); return; }
   state.books = data || [];
@@ -1465,12 +1593,20 @@ function showEditorActive() {
   $("#editor-top").hidden = false;
   $("#editor-body").hidden = false;
   $("#format-bar").hidden = false;
+  document.querySelector(".editor").classList.add("bounded");
 }
 function showEditorEmpty() {
   $("#editor-placeholder").hidden = false;
   $("#editor-top").hidden = true;
   $("#editor-body").hidden = true;
   $("#format-bar").hidden = true;
+  document.querySelector(".editor").classList.remove("bounded");
+}
+
+/* nome de quem escreve: o do cadastro; se não houver, o APP_OWNER */
+function ownerName() {
+  const meta = state.user && state.user.user_metadata;
+  return (meta && meta.name && String(meta.name).trim()) || APP_OWNER;
 }
 
 /* ---- barra de formatação (rich-text via execCommand) ---- */
@@ -1517,6 +1653,86 @@ function syncFormatBar() {
     let on = false; try { on = document.queryCommandState(cmd); } catch (_) {}
     b.classList.toggle("active", on);
   });
+}
+
+/* ===================== EXPORTAR PDF + MODO LEITURA ===================== */
+
+/* capítulos na ordem da sidebar, com título e conteúdo */
+function bookBlocks() {
+  return (state.chapters || []).map((ch, i) => ({
+    n: i + 1,
+    title: ch.title || "Sem título",
+    content: ch.content || "",
+  }));
+}
+
+/* Exportar PDF: monta a versão de impressão (capa + capítulos) e abre o diálogo
+   de impressão — a pessoa escolhe "Salvar como PDF". Sem biblioteca, leve e fiel. */
+async function exportBookPdf() {
+  if (!state.currentBook) return;
+  if (state.dirty) { try { await saveCurrentChapter(); } catch (_) {} }
+
+  const root = $("#print-root");
+  root.innerHTML = "";
+
+  const cover = document.createElement("div");
+  cover.className = "p-cover";
+  const orn = document.createElement("div"); orn.className = "orn"; orn.textContent = "❧";
+  const h1 = document.createElement("h1"); h1.textContent = state.currentBook.title || "Sem título";
+  const by = document.createElement("div"); by.className = "by"; by.textContent = "por " + ownerName();
+  const yr = document.createElement("div"); yr.className = "yr"; yr.textContent = String(new Date().getFullYear());
+  cover.append(orn, h1, by, yr);
+  root.appendChild(cover);
+
+  bookBlocks().forEach((b) => {
+    const sec = document.createElement("section");
+    sec.className = "p-chapter";
+    const ch = document.createElement("div"); ch.className = "p-ch"; ch.textContent = "Capítulo " + b.n;
+    const t = document.createElement("h2"); t.textContent = b.title;
+    const body = document.createElement("div"); body.className = "p-body";
+    body.innerHTML = b.content; // conteúdo da própria pessoa (mesmo HTML do editor)
+    sec.append(ch, t, body);
+    root.appendChild(sec);
+  });
+
+  // o nome sugerido do arquivo PDF vem do título da página
+  const prevTitle = document.title;
+  document.title = (state.currentBook.title || "Manuscrito");
+  const cleanup = () => { document.title = prevTitle; root.innerHTML = ""; window.removeEventListener("afterprint", cleanup); };
+  window.addEventListener("afterprint", cleanup);
+  window.print();
+}
+
+/* Modo leitura: o livro inteiro em fluxo contínuo, sem distração */
+function openReader() {
+  if (!state.currentBook) return;
+  if (state.dirty) { try { saveCurrentChapter(); } catch (_) {} }
+
+  $("#reader-title").textContent = state.currentBook.title || "Sem título";
+  const col = $("#reader-col");
+  col.innerHTML = "";
+
+  const bt = document.createElement("h1"); bt.className = "r-book-title"; bt.textContent = state.currentBook.title || "Sem título";
+  const by = document.createElement("p"); by.className = "r-book-by"; by.textContent = "por " + ownerName();
+  col.append(bt, by);
+
+  bookBlocks().forEach((b) => {
+    const ch = document.createElement("div"); ch.className = "r-ch"; ch.textContent = "Capítulo " + b.n;
+    const t = document.createElement("h2"); t.className = "r-title"; t.textContent = b.title;
+    const body = document.createElement("div"); body.className = "r-body";
+    body.innerHTML = b.content;
+    col.append(ch, t, body);
+  });
+
+  $("#reader").hidden = false;
+  document.querySelector(".reader-scroll").scrollTop = 0;
+}
+function closeReader() { $("#reader").hidden = true; }
+function adjustReaderSize(delta) {
+  const col = $("#reader-col");
+  const current = parseInt(getComputedStyle(col).getPropertyValue("--reader-size")) || 19;
+  const next = Math.min(27, Math.max(15, current + delta));
+  col.style.setProperty("--reader-size", next + "px");
 }
 
 async function onNewChapter() {
@@ -1707,6 +1923,16 @@ function wireEvents() {
 
   // barra de formatação do editor
   initFormatBar();
+
+  // exportar PDF + modo leitura
+  $("#export-pdf-btn").addEventListener("click", exportBookPdf);
+  $("#read-book-btn").addEventListener("click", openReader);
+  $("#reader-close").addEventListener("click", closeReader);
+  $("#reader-smaller").addEventListener("click", () => adjustReaderSize(-1));
+  $("#reader-bigger").addEventListener("click", () => adjustReaderSize(1));
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !$("#reader").hidden) closeReader();
+  });
 
   // autosave: digitação no corpo e no título do capítulo
   $("#editor-area").addEventListener("input", onEditorInput);
