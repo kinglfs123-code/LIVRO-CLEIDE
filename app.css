@@ -420,6 +420,8 @@ textarea.input { resize: vertical; min-height: 84px; line-height: 1.5; }
   height: 100vh;
   position: relative; /* ancora o pill de formatação flutuante */
 }
+/* com capítulo aberto: reserva a faixa do pill + 0,6cm — o texto PARA acima da barra */
+.editor.bounded { padding-bottom: 97px; }
 .editor-top {
   border-bottom: 1px solid var(--line);
 }
@@ -480,7 +482,7 @@ textarea.input { resize: vertical; min-height: 84px; line-height: 1.5; }
   font-family: var(--font-serif);
   font-size: 1.18rem;
   line-height: 1.85;
-  padding: 44px 24px 110px;   /* espaço embaixo p/ o pill flutuante não cobrir o texto */
+  padding: 44px 24px 18px;    /* o limite inferior agora é do painel (.editor.bounded) */
   white-space: pre-wrap;      /* preserva quebras de linha (inclusive de capítulos antigos em texto puro) */
   overflow-wrap: break-word;
   min-height: 100%;           /* ocupa toda a altura visível, não só metade */
@@ -528,7 +530,7 @@ textarea.input { resize: vertical; min-height: 84px; line-height: 1.5; }
   height: 36px; border: 1px solid rgba(255,255,255,.20); background: var(--rail-2); color: #ffffff;
   border-radius: 18px; font-family: var(--font-sans); font-size: .85rem; padding: 0 12px; cursor: pointer; flex: none;
 }
-.fb-select option { color: #221f1a; } /* a lista do dropdown abre com fundo claro do sistema */
+.fb-select option { color: #ffffff; background: var(--rail); } /* popup do dropdown: branco sobre escuro, legível */
 .fb-font { min-width: 140px; } .fb-size { width: 62px; }
 @media (max-width: 760px) {
   .format-bar { gap: 3px; padding: 7px 10px; max-width: calc(100vw - 18px); overflow-x: auto; }
@@ -639,4 +641,93 @@ textarea.input { resize: vertical; min-height: 84px; line-height: 1.5; }
   .editor-top-inner { padding: 12px 18px; max-width: 100%; }
   .editor-area { padding: 28px 18px 120px; font-size: 1.1rem; }
   .library { padding: 28px 18px 60px; }
+}
+
+/* ---------- ações do livro (sidebar): Exportar PDF / Ler ---------- */
+.book-actions {
+  margin-top: auto;             /* cola no rodapé da sidebar */
+  display: flex; flex-direction: column; gap: 8px;
+  padding-top: 14px; border-top: 1px solid var(--line);
+}
+.book-act {
+  display: flex; align-items: center; gap: 9px;
+  padding: 10px 12px; border-radius: 9px;
+  border: 1px solid var(--line-strong); background: var(--surface);
+  color: var(--ink); font-size: .9rem; font-family: var(--font-sans); cursor: pointer;
+  transition: background .15s ease;
+}
+.book-act:hover { background: var(--surface-2); }
+.book-act svg { width: 17px; height: 17px; fill: none; stroke: var(--accent); stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+
+/* ---------- modo leitura ---------- */
+.reader {
+  position: fixed; inset: 0; z-index: 80;
+  background: var(--paper);
+  background-image: radial-gradient(120% 60% at 50% -5%, #fbf7ee 0%, var(--paper) 55%);
+  display: flex; flex-direction: column;
+}
+.reader-top {
+  position: sticky; top: 0; flex: none;
+  display: flex; align-items: center; justify-content: space-between; gap: 14px;
+  padding: 14px 22px;
+  background: rgba(246,242,233,.85); backdrop-filter: blur(6px);
+  border-bottom: 1px solid var(--line);
+}
+.reader-x {
+  width: 36px; height: 36px; border-radius: 50%;
+  border: 1px solid var(--line-strong); background: var(--surface);
+  color: var(--ink-soft); cursor: pointer; font-size: .95rem;
+  display: flex; align-items: center; justify-content: center;
+}
+.reader-x:hover { background: var(--surface-2); }
+.reader-title { font-family: var(--font-serif); font-size: 1.05rem; flex: 1; text-align: center; }
+.reader-sizes { display: flex; gap: 6px; }
+.reader-sizes button {
+  width: 34px; height: 34px; border-radius: 8px;
+  border: 1px solid var(--line-strong); background: var(--surface);
+  color: var(--ink-soft); cursor: pointer; font-family: var(--font-serif); font-size: .9rem;
+}
+.reader-sizes button:hover { background: var(--surface-2); }
+.reader-scroll { flex: 1; overflow-y: auto; }
+.reader-col {
+  max-width: 58ch; margin: 0 auto; padding: 46px 24px 90px;
+  font-family: var(--font-serif); line-height: 1.9; color: #2a2620;
+  font-size: var(--reader-size, 19px);
+}
+.reader-col .r-book-title { text-align: center; font-size: 2.2rem; font-weight: 500; margin: 0 0 4px; font-family: var(--font-serif); }
+.reader-col .r-book-by { text-align: center; color: var(--ink-soft); font-style: italic; margin: 0 0 52px; }
+.reader-col .r-ch {
+  font-size: .74rem; letter-spacing: .16em; text-transform: uppercase;
+  color: var(--accent); font-family: var(--font-sans); margin: 44px 0 4px;
+}
+.reader-col h2.r-title { font-weight: 500; font-size: 1.7em; margin: 0 0 20px; }
+.reader-col .r-body { white-space: pre-wrap; overflow-wrap: break-word; }
+.reader-col .r-body p { margin: 0 0 1.1em; }
+
+/* ---------- impressão (Exportar PDF) ---------- */
+#print-root { display: none; }
+@media print {
+  body * { visibility: hidden; }
+  #print-root, #print-root * { visibility: visible; }
+  #print-root {
+    display: block; position: absolute; inset: 0;
+    font-family: var(--font-serif); color: #1c1a17;
+  }
+  .p-cover {
+    height: 100vh; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; text-align: center;
+    page-break-after: always;
+  }
+  .p-cover .orn { font-size: 1.8rem; color: #c7bfae; margin-bottom: 24px; }
+  .p-cover h1 { font-size: 2.4rem; font-weight: 500; margin: 0 0 10px; line-height: 1.15; }
+  .p-cover .by { font-size: 1rem; color: #6b6457; font-style: italic; }
+  .p-cover .yr { margin-top: 28px; font-size: .85rem; color: #9a9488; font-family: var(--font-sans); }
+  .p-chapter { page-break-before: always; padding: 24px 8mm; }
+  .p-chapter .p-ch {
+    font-size: .72rem; letter-spacing: .16em; text-transform: uppercase;
+    color: #9c4a2f; font-family: var(--font-sans); margin: 0 0 4px;
+  }
+  .p-chapter h2 { font-size: 1.5rem; font-weight: 500; margin: 0 0 16px; }
+  .p-chapter .p-body { font-size: 12pt; line-height: 1.75; text-align: justify; white-space: pre-wrap; overflow-wrap: break-word; }
+  .p-chapter .p-body p { margin: 0 0 .85em; }
 }
