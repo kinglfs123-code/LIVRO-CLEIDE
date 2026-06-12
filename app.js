@@ -94,7 +94,9 @@ const db = {
     return data.session;
   },
   signIn(email, password) { return supabaseClient.auth.signInWithPassword({ email, password }); },
-  signUp(email, password) { return supabaseClient.auth.signUp({ email, password }); },
+  signUp(email, password, name) {
+    return supabaseClient.auth.signUp({ email, password, options: { data: { name: name || "" } } });
+  },
   signOut() { return supabaseClient.auth.signOut(); },
   onAuthChange(cb) { return supabaseClient.auth.onAuthStateChange(cb); },
 
@@ -443,6 +445,8 @@ function toggleAuthMode() {
   $("#auth-submit").textContent = isLogin ? "Entrar" : "Criar conta";
   $("#auth-toggle-text").textContent = isLogin ? "Ainda não tem conta?" : "Já tem conta?";
   $("#auth-toggle-link").textContent = isLogin ? "Criar conta" : "Entrar";
+  $("#auth-name-field").hidden = isLogin; // Nome só no cadastro
+  $("#auth-name").required = !isLogin;
   setAuthMessage("");
 }
 
@@ -462,7 +466,9 @@ async function handleAuthSubmit(e) {
       if (error) throw error;
       // o onAuthStateChange cuida de abrir a biblioteca
     } else {
-      const { data, error } = await db.signUp(email, password);
+      const name = $("#auth-name").value.trim();
+      if (!name) { setAuthMessage("Escreva seu nome pra personalizar o caderno.", "error"); btn.disabled = false; return; }
+      const { data, error } = await db.signUp(email, password, name);
       if (error) throw error;
       if (data.session) {
         setAuthMessage("Conta criada! Entrando…", "info");
@@ -505,7 +511,7 @@ async function handleLogout() {
 /* ===================== 7. BIBLIOTECA ===================== */
 async function loadLibrary() {
   showView("library");
-  $("#library-title").textContent = "Olá, " + APP_OWNER + "!";
+  $("#library-title").textContent = "Olá, " + ownerName() + "!";
   const { data, error } = await db.listBooks();
   if (error) { toast("Não consegui carregar seus livros.", true); return; }
   state.books = data || [];
@@ -710,12 +716,20 @@ function showEditorActive() {
   $("#editor-top").hidden = false;
   $("#editor-body").hidden = false;
   $("#format-bar").hidden = false;
+  document.querySelector(".editor").classList.add("bounded");
 }
 function showEditorEmpty() {
   $("#editor-placeholder").hidden = false;
   $("#editor-top").hidden = true;
   $("#editor-body").hidden = true;
   $("#format-bar").hidden = true;
+  document.querySelector(".editor").classList.remove("bounded");
+}
+
+/* nome de quem escreve: o do cadastro; se não houver, o APP_OWNER */
+function ownerName() {
+  const meta = state.user && state.user.user_metadata;
+  return (meta && meta.name && String(meta.name).trim()) || APP_OWNER;
 }
 
 /* ---- barra de formatação (rich-text via execCommand) ---- */
@@ -762,6 +776,86 @@ function syncFormatBar() {
     let on = false; try { on = document.queryCommandState(cmd); } catch (_) {}
     b.classList.toggle("active", on);
   });
+}
+
+/* ===================== EXPORTAR PDF + MODO LEITURA ===================== */
+
+/* capítulos na ordem da sidebar, com título e conteúdo */
+function bookBlocks() {
+  return (state.chapters || []).map((ch, i) => ({
+    n: i + 1,
+    title: ch.title || "Sem título",
+    content: ch.content || "",
+  }));
+}
+
+/* Exportar PDF: monta a versão de impressão (capa + capítulos) e abre o diálogo
+   de impressão — a pessoa escolhe "Salvar como PDF". Sem biblioteca, leve e fiel. */
+async function exportBookPdf() {
+  if (!state.currentBook) return;
+  if (state.dirty) { try { await saveCurrentChapter(); } catch (_) {} }
+
+  const root = $("#print-root");
+  root.innerHTML = "";
+
+  const cover = document.createElement("div");
+  cover.className = "p-cover";
+  const orn = document.createElement("div"); orn.className = "orn"; orn.textContent = "❧";
+  const h1 = document.createElement("h1"); h1.textContent = state.currentBook.title || "Sem título";
+  const by = document.createElement("div"); by.className = "by"; by.textContent = "por " + ownerName();
+  const yr = document.createElement("div"); yr.className = "yr"; yr.textContent = String(new Date().getFullYear());
+  cover.append(orn, h1, by, yr);
+  root.appendChild(cover);
+
+  bookBlocks().forEach((b) => {
+    const sec = document.createElement("section");
+    sec.className = "p-chapter";
+    const ch = document.createElement("div"); ch.className = "p-ch"; ch.textContent = "Capítulo " + b.n;
+    const t = document.createElement("h2"); t.textContent = b.title;
+    const body = document.createElement("div"); body.className = "p-body";
+    body.innerHTML = b.content; // conteúdo da própria pessoa (mesmo HTML do editor)
+    sec.append(ch, t, body);
+    root.appendChild(sec);
+  });
+
+  // o nome sugerido do arquivo PDF vem do título da página
+  const prevTitle = document.title;
+  document.title = (state.currentBook.title || "Manuscrito");
+  const cleanup = () => { document.title = prevTitle; root.innerHTML = ""; window.removeEventListener("afterprint", cleanup); };
+  window.addEventListener("afterprint", cleanup);
+  window.print();
+}
+
+/* Modo leitura: o livro inteiro em fluxo contínuo, sem distração */
+function openReader() {
+  if (!state.currentBook) return;
+  if (state.dirty) { try { saveCurrentChapter(); } catch (_) {} }
+
+  $("#reader-title").textContent = state.currentBook.title || "Sem título";
+  const col = $("#reader-col");
+  col.innerHTML = "";
+
+  const bt = document.createElement("h1"); bt.className = "r-book-title"; bt.textContent = state.currentBook.title || "Sem título";
+  const by = document.createElement("p"); by.className = "r-book-by"; by.textContent = "por " + ownerName();
+  col.append(bt, by);
+
+  bookBlocks().forEach((b) => {
+    const ch = document.createElement("div"); ch.className = "r-ch"; ch.textContent = "Capítulo " + b.n;
+    const t = document.createElement("h2"); t.className = "r-title"; t.textContent = b.title;
+    const body = document.createElement("div"); body.className = "r-body";
+    body.innerHTML = b.content;
+    col.append(ch, t, body);
+  });
+
+  $("#reader").hidden = false;
+  document.querySelector(".reader-scroll").scrollTop = 0;
+}
+function closeReader() { $("#reader").hidden = true; }
+function adjustReaderSize(delta) {
+  const col = $("#reader-col");
+  const current = parseInt(getComputedStyle(col).getPropertyValue("--reader-size")) || 19;
+  const next = Math.min(27, Math.max(15, current + delta));
+  col.style.setProperty("--reader-size", next + "px");
 }
 
 async function onNewChapter() {
@@ -952,6 +1046,16 @@ function wireEvents() {
 
   // barra de formatação do editor
   initFormatBar();
+
+  // exportar PDF + modo leitura
+  $("#export-pdf-btn").addEventListener("click", exportBookPdf);
+  $("#read-book-btn").addEventListener("click", openReader);
+  $("#reader-close").addEventListener("click", closeReader);
+  $("#reader-smaller").addEventListener("click", () => adjustReaderSize(-1));
+  $("#reader-bigger").addEventListener("click", () => adjustReaderSize(1));
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !$("#reader").hidden) closeReader();
+  });
 
   // autosave: digitação no corpo e no título do capítulo
   $("#editor-area").addEventListener("input", onEditorInput);
